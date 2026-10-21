@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080910">
+  <title>Просмотр — KF Production</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div><div class="ambient ambient-two" aria-hidden="true"></div>
+  <header class="topbar okko-header">
+    <a class="brand" href="index.html"><span class="brand-mark">KF</span><span class="brand-name">KF<span>PRODUCTION</span></span></a>
+    <nav class="main-nav"><a href="index.html">Главная</a><a href="index.html#films">Фильмы</a><a class="active" href="index.html#series">Сериалы</a><a href="about.html">О проекте</a></nav>
+    <a class="top-cta" id="playerBackTop" href="index.html">← К описанию</a><button class="menu-toggle" aria-label="Открыть меню" aria-expanded="false">☰</button>
+  </header>
+  <main class="watch-page">
+    <div class="watch-topline"><a class="back-link" id="playerBack" href="index.html">← Назад к описанию</a><span class="watch-brand-label">KF PRODUCTION · PLAYER</span></div>
+    <div class="watch-heading"><div class="eyebrow"><span class="live-dot"></span> СЕЙЧАС СМОТРИТЕ</div><h1 id="video-title">Просмотр фильма</h1><p id="video-kind">KF Production · видеотека</p></div>
+    <div class="video-shell" id="video-shell">
+      <video id="movie-player" playsinline preload="metadata">
+        Твой браузер не поддерживает воспроизведение видео.
+      </video>
+      <div class="video-placeholder" id="video-placeholder"><div class="placeholder-play">▶</div><h2 id="placeholder-title">Загрузка видео…</h2><p id="placeholder-message">Подключаем видеофайл.</p><a class="button button-primary" href="index.html#series">Вернуться к сериалам</a></div>
+      <div class="subtitle-overlay" id="subtitle-overlay" aria-live="polite"></div>
+      <div class="subtitle-status" id="subtitle-status" role="status" hidden></div>
+      <div class="player-loading" id="player-loading" aria-live="polite">Загрузка видео…</div>
+      <div class="player-controls" id="player-controls">
+        <div class="seek-row"><span id="current-time">00:00</span><input id="seek-bar" aria-label="Позиция видео" type="range" min="0" max="1000" value="0"><span id="duration-time">00:00</span></div>
+        <div class="control-row">
+          <div class="control-group">
+            <button class="player-btn play-btn" id="play-toggle" aria-label="Воспроизвести" title="Воспроизвести">▶</button>
+            <button class="player-btn" id="mute-toggle" aria-label="Выключить звук" title="Звук">🔊</button>
+            <input class="volume-range" id="volume-range" aria-label="Громкость" type="range" min="0" max="1" step="0.05" value="1">
+          </div>
+          <div class="control-group">
+            <button class="player-btn" id="subtitles-toggle" aria-label="Субтитры" title="Субтитры">CC</button>
+            <button class="player-btn" id="settings-toggle" aria-label="Настройки" title="Настройки">⚙</button>
+            <button class="player-btn" id="fullscreen-toggle" aria-label="На весь экран" title="На весь экран">⛶</button>
+          </div>
+        </div>
+      </div>
+      <div class="player-settings" id="player-settings" hidden>
+        <div class="settings-head"><b>Настройки видео</b><button id="settings-close" class="settings-close" aria-label="Закрыть настройки">×</button></div>
+        <label class="setting-row"><span>Качество</span><select id="quality-select"><option value="original">Оригинал</option><option value="1080" disabled>1080p — проверяем файл…</option><option value="720" disabled>720p — проверяем файл…</option><option value="480" disabled>480p — проверяем файл…</option></select></label>
+        <label class="setting-row"><span>Озвучка</span><select id="audio-select"><option value="original">Оригинальная дорожка</option></select></label>
+        <label class="setting-row"><span>Субтитры</span><select id="subtitle-select"><option value="off">Выключены</option><option value="ru">Русские (.txt)</option></select></label>
+        <p class="settings-note" id="settings-note">Качество исходного видео нельзя повысить без перекодирования. Файл субтитров TXT: films/zona-0-ru.txt. Формат таймкодов описан в инструкции в этом файле.</p>
+      </div>
+    </div>
+    <div class="watch-below">
+      <section class="watch-details-card">
+        <div class="watch-details-main"><span class="watch-mini-label">KF PRODUCTION</span><h2 id="watchDetailTitle">Продолжить просмотр</h2><p id="watchDetailDescription">Смотри фильм в удобном режиме. Настройки качества и субтитров находятся в панели плеера.</p></div>
+        <div class="watch-detail-actions"><a id="watchDetailLink" href="index.html">О странице фильма ↗</a><span class="player-shortcuts"><kbd>Пробел</kbd> пауза · <kbd>F</kbd> экран · <kbd>←</kbd>/<kbd>→</kbd> перемотка</span></div>
+      </section>
+      <section class="watch-episodes" id="watchEpisodes" hidden>
+        <div class="watch-episodes-heading"><div><span class="watch-mini-label">KF SERIES</span><h2>Серии</h2></div><span class="watch-season-label">Сезон 1</span></div>
+        <a class="watch-episode active" id="episodeOne" href="#"><span class="episode-number">01</span><span class="episode-copy"><b>Первая серия</b><small>ЗОНА 0 · Эпизод 1</small></span><span class="episode-state">▶ Сейчас</span></a>
+      </section>
+    </div>
+  </main>
+  <footer class="okko-footer"><a class="brand" href="index.html"><span class="brand-mark">KF</span><span class="brand-name">KF<span>PRODUCTION</span></span></a><p>Фильмы и сериалы KF Production.</p><span class="copyright">© 2026 KF Production</span></footer>
+  <script src="script.js"></script>
+<script>
+(() => {
+ const params = new URLSearchParams(location.search);
+ const kind = params.get('kind') === 'series' ? 'series' : 'movie';
+ const id = params.get('id') || (kind === 'series' ? 'zona0' : 'film1');
+ const detailUrl = 'detail.html?id=' + encodeURIComponent(id);
+ const back = document.getElementById('playerBack');
+ const backTop = document.getElementById('playerBackTop');
+ const detailLink = document.getElementById('watchDetailLink');
+ if (back) back.href = detailUrl;
+ if (backTop) backTop.href = detailUrl;
+ if (detailLink) detailLink.href = detailUrl;
+ const title = params.get('title') || 'Просмотр фильма';
+ document.getElementById('watchDetailTitle').textContent = title;
+ document.getElementById('watchDetailDescription').textContent = kind === 'series'
+  ? 'Вы смотрите серию сериала. Открой страницу сериала, чтобы посмотреть описание и информацию о проекте.'
+  : 'Вы смотрите фильм из каталога KF Production. Вернитесь к описанию, чтобы увидеть подробности и информацию о съёмочной группе.';
+ if (kind === 'series') {
+   document.getElementById('watchEpisodes').hidden = false;
+   const ep = document.getElementById('episodeOne');
+   ep.href = 'player.html?video=' + encodeURIComponent('films/zona-0-episode1.mp4') + '&title=' + encodeURIComponent('ЗОНА 0 — 1 серия') + '&kind=series&id=zona0';
+ }
+})();
+</script>
+<script src="accounts.js"></script>
+</body>
+</html>

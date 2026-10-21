@@ -1,0 +1,7 @@
+# Private account database and local secrets
+/data/accounts.json
+/data/*.tmp
+.env
+.env.*
+!.env.example
+films/*.mp4

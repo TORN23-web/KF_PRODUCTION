@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#08090d">
+<title>Информация — KF Production</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="title-detail-page">
+<header class="topbar okko-header">
+  <a class="brand" href="index.html" aria-label="KF Production — главная"><span class="brand-mark">KF</span><span class="brand-name">KF<span>PRODUCTION</span></span></a>
+  <nav class="main-nav" aria-label="Главное меню"><a href="index.html">Главная</a><a href="index.html#films">Фильмы</a><a href="index.html#series">Сериалы</a><a href="about.html">О проекте</a></nav>
+  <a class="top-cta" href="index.html">← На главную</a><button class="menu-toggle" aria-label="Открыть меню" aria-expanded="false">☰</button>
+</header>
+<main>
+  <section class="detail-hero" id="detailHero">
+    <div class="detail-backdrop" id="detailBackdrop" aria-hidden="true"></div>
+    <div class="detail-shade"></div>
+    <div class="detail-content">
+      <a class="detail-back-link" href="index.html">← Назад к фильмам и сериалам</a>
+      <div class="detail-kicker" id="detailKicker">KF ORIGINALS</div>
+      <h1 id="detailTitle">Загрузка…</h1>
+      <div class="detail-facts" id="detailFacts"></div>
+      <p class="detail-description" id="detailDescription"></p>
+      <div class="detail-actions"><a class="detail-watch" id="detailWatch" href="#"><span>▶</span> Смотреть</a><a class="detail-trailer-link" href="#trailer">Трейлер и подробности ↓</a></div>
+      <p class="detail-note" id="detailNote"></p>
+    </div>
+    <div class="detail-poster" id="detailPoster" aria-hidden="true"><span class="detail-poster-glow"></span><span class="detail-poster-mark">KF<br><small>PRODUCTION</small></span><b id="detailPosterTitle"></b></div>
+  </section>
+  <section class="detail-info-section" id="trailer">
+    <div class="detail-section-heading"><span>ПРЕЖДЕ ЧЕМ СМОТРЕТЬ</span><h2>Трейлер</h2></div>
+    <div class="detail-trailer-box" id="trailerBox"><div class="detail-trailer-icon">▶</div><div><h3>Трейлер пока не добавлен</h3><p>Когда добавишь отдельный файл трейлера, его можно будет разместить здесь.</p></div></div>
+  </section>
+  <section class="detail-info-section detail-cast-section">
+    <div class="detail-section-heading"><span>КТО СОЗДАЛ ИСТОРИЮ</span><h2>Актёры и съёмочная группа</h2></div>
+    <div class="detail-cast-grid" id="detailCast"></div>
+    <p class="detail-cast-note">Состав съёмочной группы указан для выбранного фильма или сериала.</p>
+  </section>
+  <section class="detail-info-section detail-about-section">
+    <div class="detail-section-heading"><span>О ПРОЕКТЕ</span><h2>О фильме</h2></div>
+    <p id="detailLongDescription"></p>
+  </section>
+</main>
+<footer class="okko-footer"><a class="brand" href="index.html"><span class="brand-mark">KF</span><span class="brand-name">KF<span>PRODUCTION</span></span></a><p>Смотри свои фильмы и сериалы.</p><span class="copyright">© 2026 KF Production</span></footer>
+<script src="script.js"></script>
+<script>
+(() => {
+ const titles = {
+  film1: {name:'Новые миры', poster:'НОВЫЕ МИРЫ', kind:'ФИЛЬМ', genre:'Фантастика', year:'2026', duration:'Уточняется', kicker:'KF ORIGINALS', description:'Отправляйся навстречу неизвестному. Добавь сюда описание фильма, чтобы зрители знали, какая история их ждёт.', video:'films/film1.mp4', videoTitle:'Фильм 1', videoKind:'movie', cast:[['Актёры','Добавь имена актёров'],['Режиссёр','Добавь имя режиссёра'],['Сценарий','Добавь автора сценария']]},
+  film2: {name:'За гранью обычного', poster:'ЗА ГРАНЬЮ ОБЫЧНОГО', kind:'ФИЛЬМ', genre:'Драма / приключения', year:'2026', duration:'Уточняется', kicker:'KF ORIGINALS', description:'История, которая может изменить всё. Добавь сюда краткий сюжет фильма.', video:'films/film2.mp4', videoTitle:'Фильм 2', videoKind:'movie', cast:[['Актёры','Добавь имена актёров'],['Режиссёр','Добавь имя режиссёра'],['Сценарий','Добавь автора сценария']]},
+  zona0: {name:'ЗОНА 0', poster:'ЗОНА 0', kind:'СЕРИАЛ', genre:'Триллер / фантастика', year:'2026', duration:'1 сезон · 1 серия', kicker:'KF SERIES', description:'Таинственная история сериала «ЗОНА 0». Здесь будет полное описание сюжета, персонажей и событий первого сезона.', video:'films/zona-0-episode1.mp4', videoTitle:'ЗОНА 0 — 1 серия', videoKind:'series', cast:[['Актёры','Kashma, Даня28k'],['Режиссёр','Kashma'],['Автор','TORANGILAND'],['Аниматор','TORANGILAND'],['Монтажёр','TORANGILAND']]}
+ };
+ const key = new URLSearchParams(location.search).get('id') || 'zona0';
+ const item = titles[key] || titles.zona0;
+ document.title = item.name + ' — KF Production';
+ document.getElementById('detailTitle').textContent = item.name;
+ document.getElementById('detailPosterTitle').textContent = item.poster;
+ document.getElementById('detailKicker').textContent = item.kicker;
+ document.getElementById('detailDescription').textContent = item.description;
+ document.getElementById('detailLongDescription').textContent = item.description;
+ document.getElementById('detailFacts').innerHTML = [item.year,item.genre,item.duration].map(v=>'<span>'+v+'</span>').join('<i></i>');
+ document.getElementById('detailWatch').href = 'player.html?video='+encodeURIComponent(item.video)+'&title='+encodeURIComponent(item.videoTitle)+'&kind='+item.videoKind+'&id='+key;
+ document.getElementById('detailWatch').innerHTML = '<span>▶</span> Смотреть '+(item.videoKind==='series'?'1 серию':'фильм');
+ document.getElementById('detailNote').textContent = item.videoKind==='series' ? 'Доступно: 1 сезон · 1 серия' : 'KF Production · оригинальный каталог';
+ document.getElementById('detailCast').innerHTML = item.cast.map((c,i)=>'<article class="detail-cast-card"><div class="detail-cast-avatar">'+(i===0?'✦':i===1?'◈':'✧')+'</div><span>'+c[0]+'</span><b>'+c[1]+'</b></article>').join('');
+ document.getElementById('detailPoster').classList.add('detail-poster-'+key);
+ if (key==='zona0') {
+   const poster = document.getElementById('detailPoster');
+   poster.style.backgroundImage = "url('assets/zona-0.jpg')";
+   poster.style.backgroundSize = 'cover';
+   poster.style.backgroundPosition = 'center';
+   poster.style.backgroundRepeat = 'no-repeat';
+   document.getElementById('detailBackdrop').style.backgroundImage = "linear-gradient(90deg,#08090df2 0%,#08090d99 60%,#08090d55 100%), url('assets/%D0%B7%D0%BE%D0%BD%D0%B0%200%20%D0%BA%D0%B0%D1%80%D1%82%D0%B8%D0%BD%D0%BA%D0%B0%202.jpg')";
+   document.getElementById('detailBackdrop').style.backgroundSize = 'cover';
+   document.getElementById('detailBackdrop').style.backgroundPosition = 'center';
+   poster.querySelector('.detail-poster-glow').style.display = 'none';
+   poster.querySelector('.detail-poster-mark').style.display = 'none';
+ }
+ document.getElementById('detailBackdrop').classList.add('detail-backdrop-'+key);
+ const trailer = document.getElementById('trailerBox');
+ if (key==='zona0') {
+   trailer.innerHTML='<video controls preload="none" poster="" aria-label="Трейлер ЗОНА 0" style="display:none"></video><div class="detail-trailer-icon">▶</div><div><h3>Трейлер «ЗОНА 0» пока не добавлен</h3><p>Полная серия доступна по кнопке «Смотреть 1 серию» выше.</p></div>';
+ }
+})();
+</script>
+<script src="accounts.js"></script>
+</body>
+</html>

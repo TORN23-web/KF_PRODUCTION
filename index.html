@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#08090d">
+  <meta name="description" content="Смотри фильмы и сериалы KF Production.">
+  <title>KF Production — смотреть фильмы</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="okko-home">
+  <header class="topbar okko-header">
+    <a class="brand" href="index.html" aria-label="KF Production — главная"><span class="brand-mark">KF</span><span class="brand-name">KF<span>PRODUCTION</span></span></a>
+    <nav class="main-nav" aria-label="Главное меню">
+      <a class="active" href="index.html">Главная</a>
+      <a href="#series">Фильмы</a>
+      <a href="#series">Сериалы</a>
+      <a href="about.html">О проекте</a>
+    </nav>
+    <a class="top-cta" href="#films">Смотреть <span>▶</span></a>
+    <button class="menu-toggle" aria-label="Открыть меню" aria-expanded="false">☰</button>
+  </header>
+  <main>
+    <section class="okko-hero recommended-hero" id="recommendedHero">
+      <div class="okko-hero-art slide-art slide-one" id="recommendedArt" aria-hidden="true" style="background-image:linear-gradient(90deg, rgba(8,9,13,.96) 0%, rgba(8,9,13,.68) 35%, rgba(8,9,13,.12) 100%), url('assets/%D0%B7%D0%BE%D0%BD%D0%B0%200%20%D0%BA%D0%B0%D1%80%D1%82%D0%B8%D0%BD%D0%BA%D0%B0%202.jpg');background-size:contain;background-repeat:no-repeat;background-position:right center;"></div>
+      <div class="okko-hero-shade"></div>
+      <div class="okko-hero-content reveal">
+        <div class="okko-label"><span></span> РЕКОМЕНДУЕМЫЙ СЕРИАЛ</div>
+        <h1 id="recommendedTitle">ЗОНА<br><em>0</em></h1>
+        <p id="recommendedDescription">Открой для себя новые истории от KF Production.</p>
+        <div class="okko-hero-actions">
+          <a class="okko-watch-button" id="recommendedWatch" href="detail.html?id=zona0"><span>▶</span> Смотреть сериал</a>
+          <a class="okko-more-button" href="#films">К сериалу <span>↘</span></a>
+        </div>
+        <div class="okko-hero-dots" id="recommendedDots" aria-label="Выбрать рекомендацию">
+          <button class="selected" type="button" aria-label="Рекомендация 1" data-slide="0"></button>
+          <button type="button" aria-label="Рекомендация 2" data-slide="1"></button>
+          <button type="button" aria-label="Рекомендация 3" data-slide="2"></button>
+        </div>
+      </div>
+      <button class="recommended-arrow recommended-prev" id="recommendedPrev" type="button" aria-label="Предыдущая рекомендация">‹</button>
+      <button class="recommended-arrow recommended-next" id="recommendedNext" type="button" aria-label="Следующая рекомендация">›</button>
+      <div class="okko-hero-caption"><span id="recommendedNumber">01</span><i></i><span>РЕКОМЕНДУЕМ</span></div>
+    </section>
+
+
+    <section class="okko-row-section okko-featured series-row" id="series">
+      <div class="okko-section-title reveal"><div><span class="okko-overline">KF SERIES</span><h2>Сериалы</h2></div></div>
+      <div class="okko-movie-row">
+        <a class="okko-movie-card reveal" href="detail.html?id=zona0">
+          <div class="okko-poster okko-poster-three" style="background-image:url('assets/zona-0.jpg')"><span class="poster-orb" style="display:none"></span><span class="poster-landscape" style="display:none"></span><span class="okko-poster-kicker">KF SERIES</span><b>ЗОНА<br>0</b><span class="okko-card-play">▶</span></div>
+          <div class="okko-movie-meta"><span>СЕРИАЛ · 1 СЕЗОН · 1 СЕРИЯ</span><b>ЗОНА 0</b></div>
+        </a>
+      </div>
+    </section>
+  </main>
+  <footer class="okko-footer"><a class="brand" href="index.html"><span class="brand-mark">KF</span><span class="brand-name">KF<span>PRODUCTION</span></span></a><p>© 2026 KF Production</p></footer>
+  <script src="script.js"></script>
+  <script>
+    (() => {
+      const slides = [
+        { title: 'ЗОНА<br><em>0</em>', description: 'Первый эпизод сериала «ЗОНА 0». Смотри первую серию на KF Production.', button: 'Смотреть 1 серию', href: 'detail.html?id=zona0', art: 'slide-three' }
+      ];
+      const art = document.getElementById('recommendedArt');
+      const content = document.querySelector('.recommended-hero .okko-hero-content');
+      const title = document.getElementById('recommendedTitle');
+      const description = document.getElementById('recommendedDescription');
+      const watch = document.getElementById('recommendedWatch');
+      const number = document.getElementById('recommendedNumber');
+      const dots = Array.from(document.querySelectorAll('#recommendedDots button'));
+      dots.slice(1).forEach(dot => dot.remove());
+      let current = 0;
+      let timer;
+      function showSlide(index, direction = 1) {
+        current = (index + slides.length) % slides.length;
+        const slide = slides[current];
+        content.classList.remove('slide-transition', 'swipe-from-left', 'swipe-from-right');
+        art.classList.remove('backdrop-transition', 'swipe-art-left', 'swipe-art-right');
+        // Анимация нужна только когда есть несколько рекомендаций.
+        if (slides.length > 1) {
+          void content.offsetWidth;
+          content.classList.add('slide-transition', direction < 0 ? 'swipe-from-left' : 'swipe-from-right');
+          art.classList.add('backdrop-transition', direction < 0 ? 'swipe-art-left' : 'swipe-art-right');
+        }
+        title.innerHTML = slide.title;
+        description.textContent = slide.description;
+        watch.href = slide.href;
+        watch.innerHTML = '<span>▶</span> ' + slide.button;
+        number.textContent = String(current + 1).padStart(2, '0');
+        art.classList.remove('slide-one', 'slide-two', 'slide-three');
+        art.classList.add(slide.art);
+        dots.forEach((dot, i) => {
+          dot.classList.toggle('selected', i === current);
+          dot.setAttribute('aria-current', i === current ? 'true' : 'false');
+        });
+      }
+      function restartTimer() {
+        clearInterval(timer);
+        timer = null;
+        if (slides.length < 2) return;
+        timer = setInterval(() => showSlide(current + 1, 1), 5000);
+      }
+      dots.forEach((dot, i) => dot.addEventListener('click', () => {
+        showSlide(i, i < current ? -1 : 1);
+        restartTimer();
+      }));
+      const hero = document.getElementById('recommendedHero');
+      document.getElementById('recommendedPrev').hidden = true;
+      document.getElementById('recommendedNext').hidden = true;
+      // Автопереключение не останавливается при наведении мыши.
+      showSlide(0);
+      restartTimer();
+    })();
+  </script>
+<script src="accounts.js"></script>
+</body>
+</html>
