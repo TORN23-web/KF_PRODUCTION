@@ -34,7 +34,7 @@
     await sync();
   }
   const knownItems = {
-    zona0:{title:'ЗОНА 0',url:'detail.html?id=zona0',image:'assets/zona-0.jpg',kind:'СЕРИАЛ'}
+    zona0:{title:'ЗОНА 0',url:'detail.html?id=zona0',image:'assets/zona-0.jpg',kind:'СЕРИАЛ',video:'films/zona-0-episode1.mp4',videoTitle:'ЗОНА 0 — 1 серия'}
   };
   function itemCard(id, label, progress) {
     const item=knownItems[id]; if(!item) return null;
@@ -111,5 +111,11 @@
     document.addEventListener('visibilitychange',()=>{if(document.hidden)saveProgress(true);});
     window.addEventListener('pagehide',()=>saveProgress(true));
   }
+  fetch('/api/catalog',{cache:'no-store'}).then(r=>r.ok?r.json():{items:[]}).then(data=>{
+    (data.items||[]).forEach(item=>{
+      knownItems[item.id]={title:item.title,url:'detail.html?id='+encodeURIComponent(item.id),image:item.poster||'assets/zona-0.jpg',kind:item.kind==='series'?'СЕРИАЛ':'ФИЛЬМ',video:item.video,videoTitle:item.videoTitle||item.title};
+    });
+    if(accountPage&&currentUser) renderAccount();
+  }).catch(()=>{});
   refreshUser();
 })();
