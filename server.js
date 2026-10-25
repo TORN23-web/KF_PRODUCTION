@@ -4,6 +4,14 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const ROOT = __dirname;
+// Загружаем локальные настройки из .env без сторонних зависимостей; переменные окружения хостинга имеют приоритет.
+const ENV_FILE = path.join(ROOT, '.env');
+if (fs.existsSync(ENV_FILE)) {
+  for (const line of fs.readFileSync(ENV_FILE, 'utf8').split(/\r?\n/)) {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+    if (match && process.env[match[1]] === undefined) process.env[match[1]] = match[2].replace(/^(["'])(.*)\1$/, '$2');
+  }
+}
 // На хостинге укажи KF_DATA_DIR на постоянный диск/каталог.
 // Локально данные по умолчанию остаются в папке проекта: data/accounts.json.
 const DATA_DIR = path.resolve(process.env.KF_DATA_DIR || path.join(ROOT, 'data'));
@@ -14,7 +22,12 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, JSON.stringify({ users: [] }, null, 2), { mode: 0o600 });
 
 const sessions = new Map();
-const mime = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.json':'application/json; charset=utf-8', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.png':'image/png', '.svg':'image/svg+xml', '.mp4':'video/mp4', '.txt':'text/plain; charset=utf-8', '.ico':'image/x-icon', '.webp':'image/webp', '.gif':'image/gif' };
+const adminSessions = new Map();
+const CATALOG_FILE = path.join(DATA_DIR, 'catalog.json');
+const MEDIA_DIR = path.resolve(process.env.KF_MEDIA_DIR || path.join(ROOT, 'uploads'));
+fs.mkdirSync(MEDIA_DIR, { recursive: true });
+if (!fs.existsSync(CATALOG_FILE)) fs.writeFileSync(CATALOG_FILE, JSON.stringify({ items: [] }, null, 2), { mode: 0o600 });
+const mime= { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.json':'application/json; charset=utf-8', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.png':'image/png', '.svg':'image/svg+xml', '.mp4':'video/mp4', '.webm':'video/webm', '.txt':'text/plain; charset=utf-8', '.ico':'image/x-icon', '.webp':'image/webp', '.gif':'image/gif' };
 function readDb() {
   try {
     const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
@@ -43,6 +56,41 @@ async function passwordMatches(password, user) {
 }
 function validEmail(email) { return typeof email === 'string' && email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
 function validAvatar(value) { return value === '' || (typeof value === 'string' && /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(value) && value.length <= 1_000_000); }
+function readCatalog() {
+  try { const data = JSON.parse(fs.readFileSync(CATALOG_FILE, 'utf8')); return data && Array.isArray(data.items) ? data : { items: [] }; }
+  catch (err) { console.error('Не удалось прочитать каталог:', err.message); throw new Error('Не удалось прочитать каталог.'); }
+}
+function writeCatalog(data) {
+  const temp = CATALOG_FILE + '.' + process.pid + '.tmp';
+  fs.writeFileSync(temp, JSON.stringify(data, null, 2), { mode: 0o600 });
+  fs.renameSync(temp, CATALOG_FILE);
+}
+function adminEmail(req) { const token = cookies(req).kf_admin; return token && adminSessions.get(token) === true ? token : null; }
+function safeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const aa = Buffer.from(a), bb = Buffer.from(b);
+  return aa.length === bb.length && crypto.timingSafeEqual(aa, bb);
+}
+function validMediaPath(value, optional=false) {
+  if (optional && value === '') return true;
+  if (typeof value !== 'string' || !value || value.length > 2000 || /[\\\\\r\n]/.test(value)) return false;
+  if (/^https:\/\//i.test(value)) return true;
+  return /^(assets|films)\/[a-z0-9_ .%()\-]+\.(jpg|jpeg|png|webp|gif|mp4|webm|vtt|txt)$/i.test(value) || /^\/media\/[a-z0-9_.-]+\.(jpg|jpeg|png|webp|gif|mp4|webm)$/i.test(value);
+}
+function cleanCatalogItem(body, existing={}) {
+  const title = String(body.title || '').trim().slice(0,160);
+  const kind = body.kind === 'series' ? 'series' : body.kind === 'movie' ? 'movie' : '';
+  const video = String(body.video || '').trim();
+  const poster = String(body.poster || '').trim();
+  const trailer = String(body.trailer || '').trim();
+  if (!title || !kind || !video || !validMediaPath(video) || !validMediaPath(poster,true) || !validMediaPath(trailer,true))
+    throw Object.assign(new Error('Проверь название, тип и адреса постера/видео. Используй HTTPS-ссылку или путь assets/... / films/...'), { status: 400 });
+  const id = existing.id || ('kf-' + crypto.randomBytes(6).toString('hex'));
+  const year = String(body.year || '').trim();
+  if (year && !/^\d{4}$/.test(year)) throw Object.assign(new Error('Год должен состоять из четырёх цифр.'), { status: 400 });
+  const cast = Array.isArray(body.cast) ? body.cast.slice(0,30).map(x => [String(x[0]||'').slice(0,80),String(x[1]||'').slice(0,300)]).filter(x=>x[0]&&x[1]) : [];
+  return { id, title, kind, year, genre:String(body.genre||'').trim().slice(0,100), description:String(body.description||'').trim().slice(0,4000), poster, video, videoTitle:String(body.videoTitle||title).trim().slice(0,160), trailer, cast, updatedAt:new Date().toISOString() };
+}
 async function api(req,res,url) {
   if (req.method === 'GET' && url.pathname === '/api/me') { const u=sessionUser(req); return json(res,200,{ user:u?publicUser(u):null }); }
   if (req.method === 'POST' && url.pathname === '/api/register') {
@@ -64,6 +112,59 @@ async function api(req,res,url) {
   if (req.method === 'POST' && url.pathname === '/api/logout') {
     const token=cookies(req).kf_session; if(token) sessions.delete(token);
     return json(res,200,{ok:true},{'Set-Cookie':'kf_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0'});
+  }
+  if (req.method === 'GET' && url.pathname === '/api/catalog') return json(res,200,{items:readCatalog().items});
+  if (req.method === 'GET' && url.pathname === '/api/admin/me') return json(res,200,{authenticated:!!adminEmail(req)});
+  if (req.method === 'POST' && url.pathname === '/api/admin/login') {
+    const b=await readBody(req,16*1024);
+    const expectedUser=process.env.KF_ADMIN_USER, expectedPassword=process.env.KF_ADMIN_PASSWORD;
+    if (!expectedUser || !expectedPassword) return json(res,503,{error:'Администратор ещё не настроен. Добавь KF_ADMIN_USER и KF_ADMIN_PASSWORD в переменные окружения сервера.'});
+    if (!safeEqual(String(b.username||''),expectedUser) || !safeEqual(String(b.password||''),expectedPassword)) return json(res,401,{error:'Неверный логин или пароль администратора.'});
+    const token=crypto.randomBytes(32).toString('hex'); adminSessions.set(token,true);
+    const secure=process.env.NODE_ENV==='production' ? '; Secure' : '';
+    return json(res,200,{ok:true},{'Set-Cookie':'kf_admin='+token+'; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800'+secure});
+  }
+  if (req.method === 'POST' && url.pathname === '/api/admin/logout') {
+    const token=cookies(req).kf_admin; if(token) adminSessions.delete(token);
+    return json(res,200,{ok:true},{'Set-Cookie':'kf_admin=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'});
+  }
+  if (req.method === 'POST' && url.pathname === '/api/admin/upload') {
+    if (!adminEmail(req)) return json(res,401,{error:'Войди в панель администратора.'});
+    const b=await readBody(req,110*1024*1024);
+    const kind=b.kind==='poster'?'poster':'video';
+    const original=String(b.filename||'').split(/[\\\\/]/).pop().toLowerCase();
+    const ext=path.extname(original);
+    const allowed=kind==='poster'?['.jpg','.jpeg','.png','.webp','.gif']:['.mp4','.webm'];
+    if(!allowed.includes(ext)) return json(res,400,{error:kind==='poster'?'Постер должен быть JPG, PNG, WebP или GIF.':'Видео должно быть MP4 или WebM.'});
+    const encoded=String(b.data||'');
+    if(!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length<8) return json(res,400,{error:'Файл не удалось прочитать.'});
+    const bytes=Buffer.from(encoded,'base64');
+    const max=kind==='poster'?5*1024*1024:80*1024*1024;
+    if(!bytes.length || bytes.length>max) return json(res,413,{error:kind==='poster'?'Постер должен быть не больше 5 МБ.':'Видео должно быть не больше 80 МБ.'});
+    const stored=Date.now().toString(36)+'-'+crypto.randomBytes(6).toString('hex')+ext;
+    fs.writeFileSync(path.join(MEDIA_DIR,stored),bytes,{flag:'wx'});
+    return json(res,201,{path:'/media/'+stored,size:bytes.length,message:'Файл загружен на сервер.'});
+  }
+  if (url.pathname.startsWith('/api/admin/catalog')) {
+    if (!adminEmail(req)) return json(res,401,{error:'Войди в панель администратора.'});
+    const catalog=readCatalog();
+    if (req.method==='GET' && url.pathname==='/api/admin/catalog') return json(res,200,{items:catalog.items});
+    if (req.method==='POST' && url.pathname==='/api/admin/catalog') {
+      const item=cleanCatalogItem(await readBody(req),{}); catalog.items.unshift(item); writeCatalog(catalog);
+      return json(res,201,{item,message:'Публикация добавлена в каталог.'});
+    }
+    const match=url.pathname.match(/^\/api\/admin\/catalog\/([a-z0-9_-]{1,80})$/i);
+    if (match && req.method==='PUT') {
+      const index=catalog.items.findIndex(x=>x.id===match[1]); if(index<0) return json(res,404,{error:'Публикация не найдена.'});
+      catalog.items[index]=cleanCatalogItem(await readBody(req),catalog.items[index]); writeCatalog(catalog);
+      return json(res,200,{item:catalog.items[index],message:'Изменения сохранены.'});
+    }
+    if (match && req.method==='DELETE') {
+      const before=catalog.items.length; catalog.items=catalog.items.filter(x=>x.id!==match[1]);
+      if(catalog.items.length===before) return json(res,404,{error:'Публикация не найдена.'});
+      writeCatalog(catalog); return json(res,200,{ok:true});
+    }
+    return json(res,405,{error:'Метод не поддерживается.'});
   }
   const user=sessionUser(req);
   if (!user) return json(res,401,{error:'Войди в аккаунт, чтобы сохранить изменения.'});
@@ -100,8 +201,10 @@ const server=http.createServer(async(req,res)=>{
   if (/(^|\/)data(\/|$)/i.test(pathname) || /(^|\.)(env|git)(\/|$)/i.test(pathname) || /(^|\/)(server\.js|package-lock\.json|accounts\.json)$/i.test(pathname)) {
     res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8','X-Content-Type-Options':'nosniff'}); return res.end('Файл не найден.');
   }
-  const target=path.resolve(ROOT,'.'+pathname);
-  if(!target.startsWith(ROOT+path.sep) && target!==ROOT) { res.writeHead(403); return res.end('Forbidden'); }
+  const isMedia = pathname.startsWith('/media/');
+  const baseDir = isMedia ? MEDIA_DIR : ROOT;
+  const target = isMedia ? path.resolve(MEDIA_DIR, pathname.slice('/media/'.length)) : path.resolve(ROOT, '.' + pathname);
+  if(!target.startsWith(baseDir+path.sep) && target!==baseDir) { res.writeHead(403); return res.end('Forbidden'); }
   fs.stat(target,(err,st)=>{ if(err||!st.isFile()) {res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'}); return res.end('Файл не найден.');}
     res.writeHead(200,{'Content-Type':mime[path.extname(target).toLowerCase()]||'application/octet-stream','X-Content-Type-Options':'nosniff','Cache-Control':path.extname(target).toLowerCase()==='.html'?'no-cache':'public, max-age=3600'});
     fs.createReadStream(target).pipe(res);
