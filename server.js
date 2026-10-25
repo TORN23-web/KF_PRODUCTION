@@ -24,6 +24,8 @@ if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, JSON.stringify({ users: [
 const sessions = new Map();
 const adminSessions = new Map();
 const CATALOG_FILE = path.join(DATA_DIR, 'catalog.json');
+const ADMINS_FILE = path.join(DATA_DIR, 'admins.json');
+if (!fs.existsSync(ADMINS_FILE)) fs.writeFileSync(ADMINS_FILE, JSON.stringify({ admins: [] }, null, 2), { mode: 0o600 });
 const MEDIA_DIR = path.resolve(process.env.KF_MEDIA_DIR || path.join(ROOT, 'uploads'));
 fs.mkdirSync(MEDIA_DIR, { recursive: true });
 if (!fs.existsSync(CATALOG_FILE)) fs.writeFileSync(CATALOG_FILE, JSON.stringify({ items: [] }, null, 2), { mode: 0o600 });
@@ -65,7 +67,9 @@ function writeCatalog(data) {
   fs.writeFileSync(temp, JSON.stringify(data, null, 2), { mode: 0o600 });
   fs.renameSync(temp, CATALOG_FILE);
 }
-function adminEmail(req) { const token = cookies(req).kf_admin; return token && adminSessions.get(token) === true ? token : null; }
+function readAdmins() { const data = JSON.parse(fs.readFileSync(ADMINS_FILE, 'utf8')); return data && Array.isArray(data.admins) ? data : { admins: [] }; }
+function writeAdmins(data) { const temp = ADMINS_FILE + '.' + process.pid + '.tmp'; fs.writeFileSync(temp, JSON.stringify(data, null, 2), { mode: 0o600 }); fs.renameSync(temp, ADMINS_FILE); }
+function adminEmail(req) { const token = cookies(req).kf_admin; return token ? (adminSessions.get(token) || null) : null; }
 function safeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
   const aa = Buffer.from(a), bb = Buffer.from(b);
@@ -114,15 +118,41 @@ async function api(req,res,url) {
     return json(res,200,{ok:true},{'Set-Cookie':'kf_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0'});
   }
   if (req.method === 'GET' && url.pathname === '/api/catalog') return json(res,200,{items:readCatalog().items});
-  if (req.method === 'GET' && url.pathname === '/api/admin/me') return json(res,200,{authenticated:!!adminEmail(req)});
+  if (req.method === 'GET' && url.pathname === '/api/admin/me') { const username=adminEmail(req); return json(res,200,{authenticated:!!username,username}); }
   if (req.method === 'POST' && url.pathname === '/api/admin/login') {
-    const b=await readBody(req,16*1024);
-    const expectedUser=process.env.KF_ADMIN_USER, expectedPassword=process.env.KF_ADMIN_PASSWORD;
-    if (!expectedUser || !expectedPassword) return json(res,503,{error:'Администратор ещё не настроен. Добавь KF_ADMIN_USER и KF_ADMIN_PASSWORD в переменные окружения сервера.'});
-    if (!safeEqual(String(b.username||''),expectedUser) || !safeEqual(String(b.password||''),expectedPassword)) return json(res,401,{error:'Неверный логин или пароль администратора.'});
-    const token=crypto.randomBytes(32).toString('hex'); adminSessions.set(token,true);
+    const b=await readBody(req,16*1024); const username=String(b.username||'').trim().toLowerCase(); const password=b.password;
+    const store=readAdmins(); let admin=store.admins.find(a=>a.username===username);
+    // Первичный администратор создаётся из серверных переменных только при пустом списке.
+    if (!store.admins.length && process.env.KF_ADMIN_USER && process.env.KF_ADMIN_PASSWORD && safeEqual(username,process.env.KF_ADMIN_USER.trim().toLowerCase()) && safeEqual(String(password||''),process.env.KF_ADMIN_PASSWORD)) {
+      const p=await hashPassword(String(password)); admin={username,salt:p.salt,hash:p.hash,createdAt:new Date().toISOString()}; store.admins.push(admin); writeAdmins(store);
+    }
+    if (!admin || typeof password!=='string' || !(await passwordMatches(password,admin))) return json(res,401,{error:'Неверный логин или пароль администратора.'});
+    const token=crypto.randomBytes(32).toString('hex'); adminSessions.set(token,admin.username);
     const secure=process.env.NODE_ENV==='production' ? '; Secure' : '';
-    return json(res,200,{ok:true},{'Set-Cookie':'kf_admin='+token+'; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800'+secure});
+    return json(res,200,{ok:true,username:admin.username},{'Set-Cookie':'kf_admin='+token+'; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800'+secure});
+  }
+  if (req.method === 'GET' && url.pathname === '/api/admin/accounts') {
+    if (!adminEmail(req)) return json(res,401,{error:'Войди в панель администратора.'});
+    return json(res,200,{admins:readAdmins().admins.map(a=>({username:a.username,createdAt:a.createdAt||''}))});
+  }
+  if (req.method === 'POST' && url.pathname === '/api/admin/accounts') {
+    if (!adminEmail(req)) return json(res,401,{error:'Войди в панель администратора.'});
+    const b=await readBody(req,16*1024); const username=String(b.username||'').trim().toLowerCase(); const password=b.password;
+    if (!/^[a-z0-9][a-z0-9._-]{2,39}$/.test(username)) return json(res,400,{error:'Логин: 3–40 символов, латинские буквы, цифры, точка, дефис или подчёркивание.'});
+    if (typeof password!=='string'||password.length<12||password.length>200) return json(res,400,{error:'Пароль нового администратора должен содержать от 12 до 200 символов.'});
+    const store=readAdmins(); if(store.admins.some(a=>a.username===username)) return json(res,409,{error:'Администратор с таким логином уже существует.'});
+    const p=await hashPassword(password); store.admins.push({username,salt:p.salt,hash:p.hash,createdAt:new Date().toISOString()}); writeAdmins(store);
+    return json(res,201,{ok:true,admin:{username,createdAt:new Date().toISOString()}});
+  }
+  if (req.method === 'DELETE' && url.pathname.startsWith('/api/admin/accounts/')) {
+    if (!adminEmail(req)) return json(res,401,{error:'Войди в панель администратора.'});
+    const username=decodeURIComponent(url.pathname.slice('/api/admin/accounts/'.length)).toLowerCase();
+    if(username===adminEmail(req)) return json(res,400,{error:'Нельзя удалить текущий аккаунт, пока ты в нём авторизован.'});
+    const store=readAdmins(); if(store.admins.length<=1) return json(res,400,{error:'Нельзя удалить последнего администратора.'});
+    const before=store.admins.length; store.admins=store.admins.filter(a=>a.username!==username);
+    if(store.admins.length===before) return json(res,404,{error:'Администратор не найден.'}); writeAdmins(store);
+    for (const [token, name] of adminSessions) if (name === username) adminSessions.delete(token);
+    return json(res,200,{ok:true});
   }
   if (req.method === 'POST' && url.pathname === '/api/admin/logout') {
     const token=cookies(req).kf_admin; if(token) adminSessions.delete(token);
