@@ -30,7 +30,7 @@
   </section>
   <section class="detail-info-section" id="trailer">
     <div class="detail-section-heading"><span>ПРЕЖДЕ ЧЕМ СМОТРЕТЬ</span><h2>Трейлер</h2></div>
-    <div class="detail-trailer-box detail-trailer-player-box" id="trailerBox"><div class="video-shell trailer-video-shell" id="trailer-video-shell"><video id="trailer-player" controls playsinline preload="metadata" aria-label="Трейлер ЗОНА 0 — 1 серия" src="films/zona-0-trailer.mp4"></video><div class="player-loading" id="trailer-loading">Загрузка видео…</div><div class="player-controls" id="trailer-controls"><div class="seek-row"><span id="trailer-current-time">00:00</span><input class="trailer-seek" id="trailer-seek" aria-label="Позиция трейлера" type="range" min="0" max="1000" value="0"><span id="trailer-duration">00:00</span></div><div class="control-row"><div class="control-group"><button class="player-btn play-btn" id="trailer-play" aria-label="Воспроизвести" title="Воспроизвести">▶</button><button class="player-btn" id="trailer-mute" aria-label="Выключить звук" title="Звук">🔊</button><input class="volume-range" id="trailer-volume" aria-label="Громкость трейлера" type="range" min="0" max="1" step="0.05" value="1"></div><div class="control-group"><button class="player-btn" id="trailer-fullscreen" aria-label="На весь экран" title="На весь экран">⛶</button></div></div></div></div><div class="detail-trailer-copy"><h3>Трейлер «ЗОНА 0» — 1 серия</h3><p>Трейлер первой серии сериала «ЗОНА 0».</p></div></div>
+    <div class="detail-trailer-box detail-trailer-player-box" id="trailerBox"><div class="video-shell trailer-video-shell" id="trailer-video-shell"><video id="trailer-player" controls playsinline preload="metadata" aria-label="Трейлер ЗОНА 0 — 1 серия" src="films/zona-0-trailer.mp4"></video><div class="subtitle-overlay" id="trailer-subtitle-overlay" aria-live="polite"></div><div class="player-loading" id="trailer-loading">Загрузка видео…</div><div class="player-controls" id="trailer-controls"><div class="seek-row"><span id="trailer-current-time">00:00</span><input class="trailer-seek" id="trailer-seek" aria-label="Позиция трейлера" type="range" min="0" max="1000" value="0"><span id="trailer-duration">00:00</span></div><div class="control-row"><div class="control-group"><button class="player-btn play-btn" id="trailer-play" aria-label="Воспроизвести" title="Воспроизвести">▶</button><button class="player-btn" id="trailer-mute" aria-label="Выключить звук" title="Звук">🔊</button><input class="volume-range" id="trailer-volume" aria-label="Громкость трейлера" type="range" min="0" max="1" step="0.05" value="1"></div><div class="control-group"><button class="player-btn" id="trailer-subtitles" aria-label="Субтитры" title="Субтитры">CC</button><button class="player-btn" id="trailer-settings-toggle" aria-label="Настройки" title="Настройки">⚙</button><button class="player-btn" id="trailer-fullscreen" aria-label="На весь экран" title="На весь экран">⛶</button></div></div></div><div class="player-settings trailer-settings" id="trailer-settings" hidden><div class="settings-head"><b>Настройки трейлера</b><button id="trailer-settings-close" class="settings-close" aria-label="Закрыть настройки">×</button></div><label class="setting-row"><span>Субтитры</span><select id="trailer-subtitle-select"><option value="off">Выключены</option><option value="ru">Русские</option></select></label><label class="setting-row"><span>Качество</span><select id="trailer-quality-select"><option value="original">Исходное видео</option></select></label></div></div><div class="detail-trailer-copy"><h3>Трейлер «ЗОНА 0» — 1 серия</h3><p>Трейлер первой серии сериала «ЗОНА 0».</p></div></div>
   </section>
   <section class="detail-info-section detail-cast-section">
     <div class="detail-section-heading"><span>КТО СОЗДАЛ ИСТОРИЮ</span><h2>Актёры и съёмочная группа</h2></div>
@@ -104,6 +104,22 @@
    video.addEventListener('error',()=>{loading.textContent='Не удалось загрузить трейлер';loading.classList.add('visible')});
    seek.addEventListener('input',()=>{if(Number.isFinite(video.duration))video.currentTime=Number(seek.value)/1000*video.duration;update()});
    mute.addEventListener('click',()=>{video.muted=!video.muted;updateVolume()});volume.addEventListener('input',()=>{video.volume=Number(volume.value);video.muted=video.volume===0;updateVolume()});
+   const settings=document.getElementById('trailer-settings');
+   const settingsToggle=document.getElementById('trailer-settings-toggle');
+   const settingsClose=document.getElementById('trailer-settings-close');
+   const subtitleButton=document.getElementById('trailer-subtitles');
+   const subtitleSelect=document.getElementById('trailer-subtitle-select');
+   const subtitleOverlay=document.getElementById('trailer-subtitle-overlay');
+   let trailerSubtitles=[], subtitlesEnabled=false;
+   const parseTime=value=>{const parts=value.trim().split(':').map(Number);return parts.reduce((sum,n)=>sum*60+n,0)};
+   fetch('films/zona-0-ru.txt').then(r=>{if(!r.ok)throw new Error('subtitles unavailable');return r.text()}).then(text=>{trailerSubtitles=text.split(/\r?\n/).map(line=>{const m=line.match(/^\s*(\d{2}:\d{2}(?::\d{2})?)\s*-->\s*(\d{2}:\d{2}(?::\d{2})?)\s*\|\s*(.+)$/);return m?{start:parseTime(m[1]),end:parseTime(m[2]),text:m[3]}:null}).filter(Boolean)}).catch(()=>{});
+   const updateSubtitles=()=>{const cue=trailerSubtitles.find(c=>video.currentTime>=c.start&&video.currentTime<=c.end);subtitleOverlay.textContent=subtitlesEnabled&&cue?cue.text:'';subtitleButton.classList.toggle('active',subtitlesEnabled);subtitleSelect.value=subtitlesEnabled?'ru':'off'};
+   const toggleSubtitles=()=>{subtitlesEnabled=!subtitlesEnabled;updateSubtitles()};
+   subtitleButton.addEventListener('click',toggleSubtitles);
+   subtitleSelect.addEventListener('change',()=>{subtitlesEnabled=subtitleSelect.value==='ru';updateSubtitles()});
+   settingsToggle.addEventListener('click',()=>{settings.hidden=!settings.hidden});
+   settingsClose.addEventListener('click',()=>{settings.hidden=true});
+   video.addEventListener('timeupdate',updateSubtitles);
    document.getElementById('trailer-fullscreen').addEventListener('click',async()=>{try{if(!document.fullscreenElement)await shell.requestFullscreen();else await document.exitFullscreen()}catch(_){}});
    video.load();updatePlay();updateVolume();
  }
