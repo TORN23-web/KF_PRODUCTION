@@ -30,7 +30,7 @@
   </section>
   <section class="detail-info-section" id="trailer">
     <div class="detail-section-heading"><span>ПРЕЖДЕ ЧЕМ СМОТРЕТЬ</span><h2>Трейлер</h2></div>
-    <div class="detail-trailer-box" id="trailerBox"><video controls preload="metadata" aria-label="Трейлер ЗОНА 0 — 1 серия" style="width:100%;max-height:480px;display:block;background:#000" src="films/zona-0-trailer.mp4"></video><div><h3>Трейлер «ЗОНА 0» — 1 серия</h3><p>Трейлер первой серии сериала «ЗОНА 0».</p></div></div>
+    <div class="detail-trailer-box detail-trailer-player-box" id="trailerBox"><div class="video-shell trailer-video-shell" id="trailer-video-shell"><video id="trailer-player" playsinline preload="metadata" aria-label="Трейлер ЗОНА 0 — 1 серия" src="films/zona-0-trailer.mp4"></video><div class="player-loading" id="trailer-loading">Загрузка видео…</div><div class="player-controls" id="trailer-controls"><div class="seek-row"><span id="trailer-current-time">00:00</span><input class="trailer-seek" id="trailer-seek" aria-label="Позиция трейлера" type="range" min="0" max="1000" value="0"><span id="trailer-duration">00:00</span></div><div class="control-row"><div class="control-group"><button class="player-btn play-btn" id="trailer-play" aria-label="Воспроизвести" title="Воспроизвести">▶</button><button class="player-btn" id="trailer-mute" aria-label="Выключить звук" title="Звук">🔊</button><input class="volume-range" id="trailer-volume" aria-label="Громкость трейлера" type="range" min="0" max="1" step="0.05" value="1"></div><div class="control-group"><button class="player-btn" id="trailer-fullscreen" aria-label="На весь экран" title="На весь экран">⛶</button></div></div></div></div><div class="detail-trailer-copy"><h3>Трейлер «ЗОНА 0» — 1 серия</h3><p>Трейлер первой серии сериала «ЗОНА 0».</p></div></div>
   </section>
   <section class="detail-info-section detail-cast-section">
     <div class="detail-section-heading"><span>КТО СОЗДАЛ ИСТОРИЮ</span><h2>Актёры и съёмочная группа</h2></div>
@@ -81,6 +81,31 @@
  const trailer = document.getElementById('trailerBox');
  if (key!=='zona0') {
    trailer.innerHTML='<div class="detail-trailer-icon">▶</div><div><h3>Трейлер пока не добавлен</h3><p>Когда добавишь отдельный файл трейлера, его можно будет разместить здесь.</p></div>';
+ } else {
+   const video=document.getElementById('trailer-player');
+   const shell=document.getElementById('trailer-video-shell');
+   const play=document.getElementById('trailer-play');
+   const mute=document.getElementById('trailer-mute');
+   const volume=document.getElementById('trailer-volume');
+   const seek=document.getElementById('trailer-seek');
+   const now=document.getElementById('trailer-current-time');
+   const total=document.getElementById('trailer-duration');
+   const loading=document.getElementById('trailer-loading');
+   const fmt=t=>{if(!Number.isFinite(t)||t<0)return '00:00';const s=Math.floor(t),h=Math.floor(s/3600),m=Math.floor(s%3600/60),r=s%60;return h?[h,String(m).padStart(2,'0'),String(r).padStart(2,'0')].join(':'):[m,String(r).padStart(2,'0')].join(':')};
+   const update=()=>{const p=Number.isFinite(video.duration)&&video.duration>0?Math.round(video.currentTime/video.duration*1000):0;seek.value=String(p);seek.style.setProperty('--seek-progress',p/10+'%');now.textContent=fmt(video.currentTime);total.textContent=fmt(video.duration);};
+   const updatePlay=()=>{const playing=!video.paused&&!video.ended;play.textContent=playing?'Ⅱ':'▶';play.title=playing?'Пауза':'Воспроизвести';play.setAttribute('aria-label',play.title);shell.classList.toggle('is-playing',playing);};
+   const updateVolume=()=>{mute.textContent=video.muted||video.volume===0?'🔇':video.volume<.5?'🔉':'🔊';volume.value=video.muted?'0':String(video.volume);};
+   play.addEventListener('click',()=>video.paused?video.play().catch(()=>{}):video.pause());
+   video.addEventListener('click',()=>video.paused?video.play().catch(()=>{}):video.pause());
+   video.addEventListener('play',updatePlay);video.addEventListener('pause',updatePlay);video.addEventListener('ended',updatePlay);
+   video.addEventListener('loadedmetadata',()=>{video.classList.add('ready');loading.classList.remove('visible');update();});
+   video.addEventListener('timeupdate',update);video.addEventListener('durationchange',update);
+   video.addEventListener('waiting',()=>loading.classList.add('visible'));video.addEventListener('playing',()=>loading.classList.remove('visible'));video.addEventListener('canplay',()=>loading.classList.remove('visible'));
+   video.addEventListener('error',()=>{loading.textContent='Не удалось загрузить трейлер';loading.classList.add('visible')});
+   seek.addEventListener('input',()=>{if(Number.isFinite(video.duration))video.currentTime=Number(seek.value)/1000*video.duration;update()});
+   mute.addEventListener('click',()=>{video.muted=!video.muted;updateVolume()});volume.addEventListener('input',()=>{video.volume=Number(volume.value);video.muted=video.volume===0;updateVolume()});
+   document.getElementById('trailer-fullscreen').addEventListener('click',async()=>{try{if(!document.fullscreenElement)await shell.requestFullscreen();else await document.exitFullscreen()}catch(_){}});
+   video.load();updatePlay();updateVolume();
  }
 })();
 </script>
