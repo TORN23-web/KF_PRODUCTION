@@ -480,3 +480,44 @@ body:has(.watch-page) .top-cta{border-radius:7px;padding:10px 13px}
     max-width: none;
   }
 }
+
+/* Жёстко ограничиваем постеры именно в разделах личного кабинета */
+body.account-page #accountProfile .account-library-section #favoriteList,
+body.account-page #accountProfile .account-library-section #progressList {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, 160px) !important;
+  justify-content: start !important;
+  align-items: start !important;
+  gap: 16px !important;
+}
+body.account-page #accountProfile .account-library-section .account-media-card {
+  display: block !important;
+  width: 160px !important;
+  max-width: 160px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+body.account-page #accountProfile .account-library-section .account-media-card > img {
+  display: block !important;
+  width: 160px !important;
+  max-width: 100% !important;
+  height: 240px !important;
+  aspect-ratio: auto !important;
+  object-fit: cover !important;
+}
+@media (max-width: 650px) {
+  body.account-page #accountProfile .account-library-section #favoriteList,
+  body.account-page #accountProfile .account-library-section #progressList {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+  body.account-page #accountProfile .account-library-section .account-media-card {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  body.account-page #accountProfile .account-library-section .account-media-card > img {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 2 / 3 !important;
+  }
+}
