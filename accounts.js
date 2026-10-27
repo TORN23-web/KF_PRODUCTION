@@ -101,9 +101,23 @@
   async function refreshAdminLink() {
     const header=$('.topbar'); if(!header) return;
     let isAdmin=false;
-    try { isAdmin=!!(await api('/api/admin/me')).authenticated; } catch { isAdmin=false; }
+    try {
+      const sb=await getSupabase();
+      const { data: { session }, error: sessionError } = await sb.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (session?.access_token) {
+        const response=await fetch(window.KF_SUPABASE_URL+'/functions/v1/kf-admin/me', {
+          headers: { apikey: window.KF_SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer '+session.access_token },
+          cache: 'no-store'
+        });
+        if (response.ok) {
+          const result=await response.json();
+          isAdmin=result.authenticated===true;
+        }
+      }
+    } catch { isAdmin=false; }
     let link=$('.admin-panel-nav-link',header);
-    if(isAdmin && !link) { link=document.createElement('a'); link.className='top-cta admin-panel-nav-link'; link.href='admin.html'; link.textContent='Перейти в админ-панель'; const menu=$('.menu-toggle',header); header.insertBefore(link,menu||null); }
+    if(isAdmin && !link) { link=document.createElement('a'); link.className='top-cta admin-panel-nav-link'; link.href='admin.html'; link.textContent='Админ-панель'; const menu=$('.menu-toggle',header); header.insertBefore(link,menu||null); }
     if(!isAdmin && link) link.remove();
   }
   async function refreshUser() {
