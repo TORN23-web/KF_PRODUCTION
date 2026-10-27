@@ -8,3 +8,4 @@ films/*.mp4
 
 /data/catalog.json
 /uploads/
+/data/admins.json
