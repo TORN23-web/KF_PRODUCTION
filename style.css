@@ -450,3 +450,33 @@ body:has(.watch-page) .top-cta{border-radius:7px;padding:10px 13px}
 @media(max-width:650px){.account-main{padding:28px 16px 55px}.account-auth-card{padding:24px 20px;margin-top:12px}.account-profile-header{padding:18px;gap:14px;flex-wrap:wrap}.account-avatar-wrap{width:76px;height:76px;flex-basis:76px}.account-profile-copy{width:calc(100% - 100px)}.account-logout{margin-left:auto}.account-media-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.account-library-section h2{font-size:22px}}
 
 .account-page [hidden]{display:none!important}
+
+
+/* Ограничение размера карточек в личном кабинете: не затрагивает каталог и страницы фильмов */
+.account-page .account-library-section .account-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(0, 190px));
+  align-items: start;
+  gap: 16px;
+}
+.account-page .account-library-section .account-media-card {
+  width: 100%;
+  max-width: 190px;
+  min-width: 0;
+}
+.account-page .account-library-section .account-media-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+}
+@media (max-width: 650px) {
+  .account-page .account-library-section .account-media-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .account-page .account-library-section .account-media-card {
+    max-width: none;
+  }
+}
