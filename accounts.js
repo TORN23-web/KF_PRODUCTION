@@ -132,8 +132,8 @@
   };
   function itemCard(id, label, progress) {
     const item=knownItems[id]; if(!item) return null;
-    const a=document.createElement('a'); a.className='account-media-card'; a.href=item.url;
-    const img=document.createElement('img'); img.src=item.image; img.alt=''; img.loading='lazy';
+    const a=document.createElement('a'); a.className='account-media-card'; a.href=item.url; a.style.cssText='display:block;width:160px;max-width:100%;min-width:0;overflow:hidden;box-sizing:border-box;'
+    const img=document.createElement('img'); img.src=item.image; img.alt=''; img.loading='lazy'; img.style.cssText='display:block;width:100%;max-width:100%;height:240px;aspect-ratio:auto;object-fit:cover;box-sizing:border-box;'
     const copy=document.createElement('div'); copy.className='account-media-copy';
     const small=document.createElement('span'); small.textContent=label||item.kind;
     const title=document.createElement('b'); title.textContent=item.title;
