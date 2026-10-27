@@ -120,7 +120,33 @@
    settingsToggle.addEventListener('click',()=>{settings.hidden=!settings.hidden});
    settingsClose.addEventListener('click',()=>{settings.hidden=true});
    video.addEventListener('timeupdate',updateSubtitles);
-   document.getElementById('trailer-fullscreen').addEventListener('click',async()=>{try{if(!document.fullscreenElement)await shell.requestFullscreen();else await document.exitFullscreen()}catch(_){}});
+   const toggleTrailerFullscreen=async()=>{try{if(!document.fullscreenElement)await shell.requestFullscreen();else await document.exitFullscreen()}catch(_){}};
+   document.getElementById('trailer-fullscreen').addEventListener('click',toggleTrailerFullscreen);
+   // Двойной щелчок по трейлеру переключает полноэкранный режим.
+   video.addEventListener('dblclick',event=>{event.preventDefault();toggleTrailerFullscreen()});
+   // Горячие клавиши трейлера: пробел/K — пауза, F — полный экран, стрелки — перемотка, M — звук, C — субтитры.
+   document.addEventListener('keydown',event=>{
+     if(event.altKey||event.ctrlKey||event.metaKey)return;
+     const target=event.target;
+     if(target instanceof HTMLElement&&(target.isContentEditable||target.matches('input,select,textarea,button,[role="textbox"]')))return;
+     const key=event.key.toLowerCase();
+     if(event.code==='Space'||event.code==='KeyK'){
+       event.preventDefault();
+       if(video.paused)video.play().catch(()=>{});else video.pause();
+     }else if(key==='f'||event.code==='KeyF'){
+       event.preventDefault();toggleTrailerFullscreen();
+     }else if(event.code==='ArrowRight'||event.code==='ArrowLeft'){
+       if(!Number.isFinite(video.duration)||video.duration<=0)return;
+       event.preventDefault();video.currentTime=Math.max(0,Math.min(video.duration,video.currentTime+(event.code==='ArrowRight'?10:-10)));
+     }else if(key==='m'){
+       video.muted=!video.muted;updateVolume();
+     }else if(key==='c'){
+       toggleSubtitles();
+     }else if(event.key==='Escape'){
+       settings.hidden=true;
+       if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+     }
+   },true);
    video.load();updatePlay();updateVolume();
  }
 })();

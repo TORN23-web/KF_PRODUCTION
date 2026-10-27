@@ -151,6 +151,11 @@ if (player) {
     if (player.paused) player.play().catch(() => {});
     else player.pause();
   });
+  // Двойной щелчок по видео включает или выключает полноэкранный режим.
+  player.addEventListener('dblclick', (event) => {
+    event.preventDefault();
+    toggleFullscreen();
+  });
   player.addEventListener('play', updatePlayButton);
   player.addEventListener('pause', updatePlayButton);
   player.addEventListener('ended', updatePlayButton);
