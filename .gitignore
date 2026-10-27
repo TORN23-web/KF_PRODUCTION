@@ -1,11 +1,10 @@
 # Private account database and local secrets
 /data/accounts.json
+/data/catalog.json
+/data/admins.json
 /data/*.tmp
 .env
 .env.*
 !.env.example
 films/*.mp4
-
-/data/catalog.json
 /uploads/
-/data/admins.json

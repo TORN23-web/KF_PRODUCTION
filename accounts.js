@@ -13,9 +13,18 @@
     const a=document.createElement('a'); a.className='top-cta account-nav-link'; a.href='account.html'; a.textContent=user?'Мой профиль':'Войти';
     const menu=$('.menu-toggle',header); header.insertBefore(a,menu||null);
   }
+  async function refreshAdminLink() {
+    const header=$('.topbar'); if(!header) return;
+    let isAdmin=false;
+    try { isAdmin=!!(await api('/api/admin/me')).authenticated; } catch { isAdmin=false; }
+    let link=$('.admin-panel-nav-link',header);
+    if(isAdmin && !link) { link=document.createElement('a'); link.className='top-cta admin-panel-nav-link'; link.href='admin.html'; link.textContent='Перейти в админ-панель'; const menu=$('.menu-toggle',header); header.insertBefore(link,menu||null); }
+    if(!isAdmin && link) link.remove();
+  }
   async function refreshUser() {
     try { currentUser=(await api('/api/me')).user; } catch { currentUser=null; }
     makeHeaderLink(currentUser);
+    await refreshAdminLink();
     if(accountPage) renderAccount();
     if($('.detail-actions')) addFavoriteButton();
   }
@@ -95,6 +104,12 @@
       if(!/^image\/(png|jpeg|webp|gif)$/.test(file.type)||file.size>700*1024){$('#accountMessage').textContent='Выбери PNG, JPG, WebP или GIF размером до 700 КБ.';return;}
       const reader=new FileReader(); reader.onload=async()=>{try{const r=await api('/api/profile',{method:'POST',body:JSON.stringify({avatar:reader.result})});currentUser=r.user;$('#accountMessage').textContent='Аватар сохранён.';renderAccount();}catch(e){$('#accountMessage').textContent=e.message;}};reader.readAsDataURL(file);
     });
+  }
+  const showAdminLogin=$('#showAdminLogin'), adminSiteLoginForm=$('#adminSiteLoginForm');
+  if(showAdminLogin && adminSiteLoginForm) {
+    showAdminLogin.addEventListener('click',()=>{ const userForm=$('#authForm'); if(userForm) userForm.hidden=true; const tabs=$('.auth-tabs'); if(tabs) tabs.hidden=true; showAdminLogin.hidden=true; adminSiteLoginForm.hidden=false; $('#authHeading').textContent='Вход администратора'; $('#siteAdminUsername').focus(); });
+    $('#showUserLogin').addEventListener('click',()=>{ adminSiteLoginForm.hidden=true; showAdminLogin.hidden=false; const userForm=$('#authForm'); if(userForm) userForm.hidden=false; const tabs=$('.auth-tabs'); if(tabs) tabs.hidden=false; $('#authHeading').textContent='Вход в KF Production'; $('#siteAdminLoginMessage').textContent=''; });
+    adminSiteLoginForm.addEventListener('submit',async e=>{ e.preventDefault(); $('#siteAdminLoginMessage').textContent='Проверяем вход администратора…'; const button=adminSiteLoginForm.querySelector('button[type="submit"]'); button.disabled=true; try { await api('/api/admin/login',{method:'POST',body:JSON.stringify({username:$('#siteAdminUsername').value,password:$('#siteAdminPassword').value})}); $('#siteAdminPassword').value=''; await refreshAdminLink(); location.href='admin.html'; } catch(err) { $('#siteAdminLoginMessage').textContent=err.message; } finally { button.disabled=false; } });
   }
   const player=$('#movie-player');
   if(player) {
