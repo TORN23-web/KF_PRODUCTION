@@ -3,6 +3,7 @@
 /data/catalog.json
 /data/admins.json
 /data/*.tmp
+*.backup-2026-10-27
 .env
 .env.*
 !.env.example

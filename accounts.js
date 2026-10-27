@@ -1,6 +1,91 @@
 (() => {
   const $ = (s, root=document) => root.querySelector(s);
+  let supabaseClientPromise;
+  const getSupabase = async () => {
+    if (supabaseClientPromise) return supabaseClientPromise;
+    supabaseClientPromise = (async () => {
+      if (!window.KF_SUPABASE_URL || !window.KF_SUPABASE_PUBLISHABLE_KEY ||
+          window.KF_SUPABASE_PUBLISHABLE_KEY === 'PASTE_YOUR_SB_PUBLISHABLE_KEY_HERE') {
+        throw new Error('Добавь публичный sb_publishable_ ключ в файл supabase-config.js.');
+      }
+      if (!window.supabase?.createClient) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('Не удалось загрузить библиотеку Supabase. Проверь подключение к интернету.'));
+          document.head.appendChild(script);
+        });
+      }
+      return window.supabase.createClient(window.KF_SUPABASE_URL, window.KF_SUPABASE_PUBLISHABLE_KEY);
+    })();
+    return supabaseClientPromise;
+  };
   const api = async (url, options={}) => {
+    const sb = await getSupabase();
+    const body = options.body ? JSON.parse(options.body) : {};
+    const fail = (error) => { throw new Error(error?.message || 'Произошла ошибка Supabase.'); };
+    if (url === '/api/register' && options.method === 'POST') {
+      const { data, error } = await sb.auth.signUp({ email: body.email, password: body.password });
+      if (error) fail(error);
+      if (data.user && data.session) {
+        const { error: profileError } = await sb.from('profiles').upsert({ id: data.user.id, username: body.email.split('@')[0] });
+        if (profileError) fail(profileError);
+      }
+      if (data.user && !data.session) return { pendingEmailConfirmation: true };
+      return { user: data.user };
+    }
+    if (url === '/api/login' && options.method === 'POST') {
+      const { data, error } = await sb.auth.signInWithPassword({ email: body.email, password: body.password });
+      if (error) fail(error);
+      return { user: data.user };
+    }
+    if (url === '/api/logout' && options.method === 'POST') {
+      const { error } = await sb.auth.signOut(); if (error) fail(error); return { ok: true };
+    }
+    if (url === '/api/me') {
+      const { data: { user }, error } = await sb.auth.getUser();
+      if (error && error.name !== 'AuthSessionMissingError') fail(error);
+      if (!user) return { user: null };
+      const { data: profile, error: pError } = await sb.from('profiles').select('username,avatar_url').eq('id', user.id).maybeSingle();
+      if (pError) fail(pError);
+      return { user: { id: user.id, email: user.email, avatar: profile?.avatar_url || null, username: profile?.username || '' } };
+    }
+    if (url === '/api/library') {
+      const { data: { user }, error: userError } = await sb.auth.getUser(); if (userError) fail(userError);
+      if (!user) return { favorites: [], progress: {} };
+      const [f, p] = await Promise.all([
+        sb.from('favorites').select('film_id').eq('user_id', user.id),
+        sb.from('watch_progress').select('film_id,position_seconds,duration_seconds,updated_at').eq('user_id', user.id)
+      ]);
+      if (f.error) fail(f.error); if (p.error) fail(p.error);
+      const progress = {};
+      (p.data || []).forEach(row => { progress[row.film_id] = { id: row.film_id, time: row.position_seconds, duration: row.duration_seconds || 0, updatedAt: Date.parse(row.updated_at) || 0 }; });
+      return { favorites: (f.data || []).map(row => row.film_id), progress };
+    }
+    if (url === '/api/favorites' && options.method === 'POST') {
+      const { data: { user }, error: userError } = await sb.auth.getUser(); if (userError) fail(userError);
+      if (!user) throw new Error('Сначала войди в аккаунт.');
+      const { data: existing, error: readError } = await sb.from('favorites').select('id').eq('user_id', user.id).eq('film_id', body.id).maybeSingle();
+      if (readError) fail(readError);
+      if (existing) {
+        const { error } = await sb.from('favorites').delete().eq('id', existing.id); if (error) fail(error); return { isFavorite: false };
+      }
+      const { error } = await sb.from('favorites').insert({ user_id: user.id, film_id: body.id }); if (error) fail(error); return { isFavorite: true };
+    }
+    if (url === '/api/profile' && options.method === 'POST') {
+      const { data: { user }, error: userError } = await sb.auth.getUser(); if (userError) fail(userError);
+      if (!user) throw new Error('Сначала войди в аккаунт.');
+      const { error } = await sb.from('profiles').upsert({ id: user.id, avatar_url: body.avatar });
+      if (error) fail(error); return { user: { id: user.id, email: user.email, avatar: body.avatar } };
+    }
+    if (url === '/api/progress' && options.method === 'POST') {
+      const { data: { user }, error: userError } = await sb.auth.getUser(); if (userError) fail(userError);
+      if (!user) return { ok: true };
+      const { error } = await sb.from('watch_progress').upsert({ user_id: user.id, film_id: body.id, position_seconds: Math.max(0, Number(body.time) || 0), duration_seconds: Math.max(0, Number(body.duration) || 0), updated_at: new Date().toISOString() }, { onConflict: 'user_id,film_id' });
+      if (error) fail(error); return { ok: true };
+    }
+    // Admin and dynamic catalogue endpoints still belong to the existing Node.js backend.
     const response = await fetch(url, { credentials:'same-origin', headers:{'Content-Type':'application/json', ...(options.headers||{})}, ...options });
     const data = await response.json().catch(()=>({error:'Не удалось прочитать ответ сервера.'}));
     if(!response.ok) throw new Error(data.error || 'Произошла ошибка.');
@@ -93,8 +178,14 @@
     form.addEventListener('submit',async e=>{
       e.preventDefault(); $('#authMessage').textContent='Проверяем данные…'; submit.disabled=true;
       try {
-        await api('/api/'+mode,{method:'POST',body:JSON.stringify({email:$('#email').value,password:$('#password').value})});
-        currentUser=(await api('/api/me')).user; $('#authMessage').textContent=''; renderAccount();
+        const authResult = await api('/api/'+mode,{method:'POST',body:JSON.stringify({email:$('#email').value,password:$('#password').value})});
+        if (mode === 'register' && authResult.pendingEmailConfirmation) {
+          $('#authMessage').textContent='Аккаунт создан. Проверь почту и подтверди адрес, затем войди.';
+          return;
+        }
+        currentUser=(await api('/api/me')).user;
+        if (!currentUser) { $('#authMessage').textContent='Проверь почту для подтверждения регистрации, затем войди.'; return; }
+        $('#authMessage').textContent=''; renderAccount();
         const next=new URLSearchParams(location.search).get('next'); if(next) location.href=next;
       } catch(err){$('#authMessage').textContent=err.message;} finally {submit.disabled=false;}
     });
