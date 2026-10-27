@@ -1,0 +1,9 @@
+.git
+.env
+.env.*
+!.env.example
+data/
+films/*.mp4
+uploads/
+node_modules/
+.gitignore.tmp
