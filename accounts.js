@@ -94,9 +94,14 @@
   const accountPage = document.body.classList.contains('account-page');
   let currentUser = null;
   function makeHeaderLink(user) {
-    const header=$('.topbar'); if(!header || $('.account-nav-link',header)) return;
-    const a=document.createElement('a'); a.className='top-cta account-nav-link'; a.href='account.html'; a.textContent=user?'Мой профиль':'Войти';
-    const menu=$('.menu-toggle',header); header.insertBefore(a,menu||null);
+    const header=$('.topbar'); if(!header) return;
+    let a=$('.account-nav-link',header);
+    if(!a) {
+      a=document.createElement('a'); a.className='top-cta account-nav-link'; a.href='account.html';
+      const menu=$('.menu-toggle',header); header.insertBefore(a,menu||null);
+    }
+    a.textContent=user?'Мой профиль':'Войти';
+    a.setAttribute('aria-label', a.textContent);
   }
   async function refreshAdminLink() {
     const header=$('.topbar'); if(!header) return;
@@ -121,8 +126,20 @@
     if(!isAdmin && link) link.remove();
   }
   async function refreshUser() {
-    try { currentUser=(await api('/api/me')).user; } catch { currentUser=null; }
+    // Show the sign-in link immediately, without waiting for Supabase/network.
     makeHeaderLink(currentUser);
+    const header=$('.topbar');
+    const staleAdminLink=header&&$('.admin-panel-nav-link',header);
+    if(staleAdminLink) staleAdminLink.remove();
+    try {
+      const result=await api('/api/me');
+      currentUser=result.user||null;
+      makeHeaderLink(currentUser);
+    } catch (error) {
+      // A temporary network error is not proof that the saved session is invalid.
+      makeHeaderLink(currentUser);
+      console.warn('KF Production: не удалось проверить сессию:', error);
+    }
     await refreshAdminLink();
     if(accountPage) renderAccount();
     if($('.detail-actions')) addFavoriteButton();
