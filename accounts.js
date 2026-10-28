@@ -47,9 +47,16 @@
       const { data: { user }, error } = await sb.auth.getUser();
       if (error && error.name !== 'AuthSessionMissingError') fail(error);
       if (!user) return { user: null };
-      const { data: profile, error: pError } = await sb.from('profiles').select('username,avatar_url').eq('id', user.id).maybeSingle();
-      if (pError) fail(pError);
-      return { user: { id: user.id, email: user.email, avatar: profile?.avatar_url || null, username: profile?.username || '' } };
+      // Profile data is optional and must not prevent a valid Supabase login.
+      let profile = null;
+      try {
+        const { data, error: profileError } = await sb.from('profiles').select('username,avatar_url').eq('id', user.id).maybeSingle();
+        if (!profileError) profile = data;
+        else console.warn('KF Production: профиль не прочитан:', profileError.message);
+      } catch (profileError) {
+        console.warn('KF Production: профиль не прочитан:', profileError);
+      }
+      return { user: { id: user.id, email: user.email, avatar: profile?.avatar_url || null, username: profile?.username || (user.email || '').split('@')[0] } };
     }
     if (url === '/api/library') {
       const { data: { user }, error: userError } = await sb.auth.getUser(); if (userError) fail(userError);
