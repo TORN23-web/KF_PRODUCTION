@@ -43,7 +43,7 @@
   </section>
 </main>
 <footer class="okko-footer"><a class="brand" href="index.html"><span class="brand-mark">KF</span><span class="brand-name">KF<span>PRODUCTION</span></span></a><p>Смотри свои фильмы и сериалы.</p><span class="copyright">© 2026 KF Production</span></footer>
-<script src="video-storage-config.js"></script><script src="script.js"></script>
+<script src="script.js"></script>
 <script>
 (() => {
  const titles = {
@@ -83,9 +83,6 @@
    trailer.innerHTML='<div class="detail-trailer-icon">▶</div><div><h3>Трейлер пока не добавлен</h3><p>Когда добавишь отдельный файл трейлера, его можно будет разместить здесь.</p></div>';
  } else {
    const video=document.getElementById('trailer-player');
-   let videoStorageBase=String(window.KF_VIDEO_BASE_URL||'').trim();
-   while(videoStorageBase.endsWith('/'))videoStorageBase=videoStorageBase.slice(0,-1);
-   if(videoStorageBase){video.src=videoStorageBase+'/zona-0-trailer.mp4';}
    const shell=document.getElementById('trailer-video-shell');
    const play=document.getElementById('trailer-play');
    const mute=document.getElementById('trailer-mute');
