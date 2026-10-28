@@ -211,16 +211,19 @@ if (player) {
     { value: '720', label: '720p', suffix: '-720p' },
     { value: '480', label: '480p', suffix: '-480p' }
   ];
-  const originalVideoUrl = new URL(videoPath || '', window.location.href);
+  const videoStorageBase = String(window.KF_VIDEO_BASE_URL || '').trim().replace(/\/+$/, '');
+  const requestedVideoFile = (videoPath || '').split('/').pop();
+  const resolvedVideoPath = videoStorageBase && requestedVideoFile ? videoStorageBase + '/' + encodeURIComponent(requestedVideoFile) : videoPath;
+  const originalVideoUrl = new URL(resolvedVideoPath || '', window.location.href);
   const originalFile = originalVideoUrl.pathname.split('/').pop();
   const extensionIndex = originalFile.lastIndexOf('.');
   const videoStem = extensionIndex >= 0 ? originalFile.slice(0, extensionIndex) : originalFile;
   const videoExtension = extensionIndex >= 0 ? originalFile.slice(extensionIndex) : '.mp4';
   const videoDirectory = originalVideoUrl.pathname.slice(0, originalVideoUrl.pathname.lastIndexOf('/') + 1);
-  const qualitySources = new Map([['original', videoPath]]);
+  const qualitySources = new Map([['original', resolvedVideoPath]]);
   const refreshQualityOptions = async () => {
     const checks = await Promise.all(qualityOptions.slice(1).map(async item => {
-      const candidate = videoDirectory + videoStem + item.suffix + videoExtension;
+      const candidate = new URL(videoStem + item.suffix + videoExtension, originalVideoUrl).href;
       try {
         const response = await fetch(candidate, { method: 'HEAD' });
         return { ...item, candidate, available: response.ok };
@@ -312,7 +315,7 @@ if (player) {
   refreshQualityOptions();
 
   if (videoPath) {
-    player.src = videoPath;
+    player.src = resolvedVideoPath;
     placeholderTitle.textContent = 'Загрузка видео…';
     placeholderMessage.textContent = 'Подключаем видеофайл.';
     player.load();
