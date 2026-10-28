@@ -522,3 +522,23 @@ body.account-page #accountProfile .account-library-section .account-media-card >
     aspect-ratio: 2 / 3 !important;
   }
 }
+
+
+/* Ссылка на профиль должна оставаться видимой и на мобильных экранах. */
+.okko-header .account-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-left: 10px;
+}
+@media (max-width: 650px) {
+  .okko-header .account-nav-link {
+    display: inline-flex !important;
+    margin-left: auto;
+    margin-right: 12px;
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+}
