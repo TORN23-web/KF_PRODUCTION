@@ -17,7 +17,15 @@
           document.head.appendChild(script);
         });
       }
-      return window.supabase.createClient(window.KF_SUPABASE_URL, window.KF_SUPABASE_PUBLISHABLE_KEY);
+      return window.supabase.createClient(window.KF_SUPABASE_URL, window.KF_SUPABASE_PUBLISHABLE_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: window.localStorage,
+          storageKey: 'kf-production-auth'
+        }
+      });
     })();
     return supabaseClientPromise;
   };
@@ -139,13 +147,38 @@
     const staleAdminLink=header&&$('.admin-panel-nav-link',header);
     if(staleAdminLink) staleAdminLink.remove();
     try {
-      const result=await api('/api/me');
-      currentUser=result.user||null;
-      makeHeaderLink(currentUser);
+      const sb=await getSupabase();
+      // Restore the persisted browser session directly from Supabase Auth.
+      const { data: { session }, error: sessionError } = await sb.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session) {
+        currentUser=null;
+        makeHeaderLink(null);
+      } else {
+        const { data: { user }, error: userError } = await sb.auth.getUser();
+        if (userError) throw userError;
+        if (!user) {
+          currentUser=null;
+          makeHeaderLink(null);
+        } else {
+          let profile=null;
+          try {
+            const { data, error: profileError } = await sb.from('profiles')
+              .select('username,avatar_url').eq('id', user.id).maybeSingle();
+            if (!profileError) profile=data;
+            else console.warn('KF Production: профиль не прочитан:', profileError.message);
+          } catch (profileError) {
+            console.warn('KF Production: профиль не прочитан:', profileError);
+          }
+          currentUser={id:user.id,email:user.email,avatar:profile?.avatar_url||null,
+            username:profile?.username||(user.email||'').split('@')[0]};
+          makeHeaderLink(currentUser);
+        }
+      }
     } catch (error) {
-      // A temporary network error is not proof that the saved session is invalid.
+      // A failed network request must not erase a previously restored session.
       makeHeaderLink(currentUser);
-      console.warn('KF Production: не удалось проверить сессию:', error);
+      console.warn('KF Production: не удалось восстановить сессию:', error);
     }
     await refreshAdminLink();
     if(accountPage) renderAccount();
@@ -221,9 +254,17 @@
           $('#authMessage').textContent='Аккаунт создан. Проверь почту и подтверди адрес, затем войди.';
           return;
         }
-        currentUser=(await api('/api/me')).user;
-        if (!currentUser) { $('#authMessage').textContent='Проверь почту для подтверждения регистрации, затем войди.'; return; }
+        const sb=await getSupabase();
+        const { data: { session }, error: sessionError } = await sb.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (!session) { $('#authMessage').textContent='Проверь почту для подтверждения регистрации, затем войди.'; return; }
+        const { data: { user }, error: userError } = await sb.auth.getUser();
+        if (userError) throw userError;
+        if (!user) { $('#authMessage').textContent='Не удалось восстановить вход. Попробуй войти ещё раз.'; return; }
+        currentUser={id:user.id,email:user.email,avatar:null,username:(user.email||'').split('@')[0]};
+        makeHeaderLink(currentUser);
         $('#authMessage').textContent=''; renderAccount();
+        await refreshAdminLink();
         const next=new URLSearchParams(location.search).get('next'); if(next) location.href=next;
       } catch(err){$('#authMessage').textContent=err.message;} finally {submit.disabled=false;}
     });
