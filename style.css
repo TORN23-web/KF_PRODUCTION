@@ -542,3 +542,99 @@ body.account-page #accountProfile .account-library-section .account-media-card >
     font-size: 11px;
   }
 }
+
+
+/* Mobile header: keep account and verified admin actions visible beside the menu. */
+@media (max-width: 650px) {
+  .okko-header {
+    height: auto;
+    min-height: 64px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px;
+    flex-wrap: nowrap;
+  }
+  .okko-header > .brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 7px;
+  }
+  .okko-header .brand-mark {
+    width: 31px;
+    height: 31px;
+    flex: 0 0 31px;
+  }
+  .okko-header .brand-name {
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+  .okko-header .brand-name span {
+    font-size: 7px;
+    letter-spacing: 1.4px;
+  }
+  .okko-header .main-nav {
+    display: none;
+  }
+  .okko-header .top-cta.account-nav-link,
+  .okko-header .top-cta.admin-panel-nav-link {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    visibility: visible !important;
+    white-space: nowrap;
+    margin: 0;
+    padding: 9px 10px;
+    border: 1px solid #ffffff30;
+    border-radius: 8px;
+    background: #f4f4f5;
+    color: #101116;
+    font-size: 10px;
+    line-height: 1.2;
+    font-weight: 800;
+  }
+  .okko-header .top-cta.admin-panel-nav-link {
+    background: #252238;
+    color: #eeeaff;
+    border-color: #a99aff66;
+  }
+  .okko-header .menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 30px;
+    width: 30px;
+    padding: 3px 0;
+    margin: 0;
+  }
+  .okko-header.menu-open .main-nav {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 18px;
+    background: #101116;
+    border-bottom: 1px solid #ffffff18;
+  }
+  .okko-header.menu-open .main-nav a {
+    padding: 13px 0;
+  }
+}
+@media (max-width: 360px) {
+  .okko-header {
+    padding-left: 9px;
+    padding-right: 9px;
+    gap: 5px;
+  }
+  .okko-header .top-cta.account-nav-link,
+  .okko-header .top-cta.admin-panel-nav-link {
+    padding: 8px 7px;
+    font-size: 9px;
+  }
+}
