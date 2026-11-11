@@ -638,3 +638,105 @@ body.account-page #accountProfile .account-library-section .account-media-card >
     font-size: 9px;
   }
 }
+
+/* KF Production — responsive layout and browser viewport handling */
+html {
+  min-height: 100%;
+  scroll-padding-top: 88px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  overflow-x: clip;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+img, video, iframe, canvas, svg { max-width: 100%; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+a, button { touch-action: manipulation; }
+:focus-visible { outline: 2px solid #8ceaff; outline-offset: 3px; }
+.topbar {
+  padding-left: max(18px, env(safe-area-inset-left, 0px));
+  padding-right: max(18px, env(safe-area-inset-right, 0px));
+}
+.okko-header { min-height: 68px; }
+.okko-hero, .hero, .detail-hero {
+  min-height: min(760px, 88svh);
+  min-height: min(760px, 88dvh);
+}
+.video-shell, .trailer-video-shell { max-width: 100%; }
+@media (max-width: 900px) {
+  .main-nav { gap: clamp(10px, 2vw, 20px); }
+  .section, .okko-row-section, .detail-info-section {
+    padding-left: clamp(18px, 4vw, 40px);
+    padding-right: clamp(18px, 4vw, 40px);
+  }
+  .okko-movie-row { gap: 14px; }
+  .okko-movie-card { min-width: 0; }
+}
+@media (max-width: 650px) {
+  html { scroll-padding-top: 72px; }
+  .topbar, .okko-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    min-height: 60px;
+    height: auto;
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-bottom: 8px;
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+  }
+  .brand { min-width: 0; }
+  .brand-name { white-space: nowrap; }
+  .menu-toggle { min-width: 40px; min-height: 40px; }
+  .topbar.menu-open .main-nav,
+  .okko-header.menu-open .main-nav {
+    max-height: calc(100dvh - 72px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .okko-hero, .hero, .detail-hero {
+    min-height: 0;
+    min-height: 72svh;
+    min-height: 72dvh;
+  }
+  .okko-hero-content { max-width: 100%; }
+  .okko-hero h1, .hero h1 { overflow-wrap: anywhere; }
+  .okko-row-section, .section { padding-top: 48px; padding-bottom: 52px; }
+  .okko-movie-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .okko-movie-card { width: 100%; min-width: 0; }
+  .okko-poster { width: 100%; }
+  .detail-cast-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .account-main { width: 100%; }
+  .video-shell { width: 100%; min-height: 0; aspect-ratio: 16 / 9; }
+  .watch-page { width: 100%; }
+  .watch-below { grid-template-columns: minmax(0, 1fr); }
+  footer, .okko-footer {
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  }
+}
+@media (max-width: 380px) {
+  .brand-name { font-size: 9px; letter-spacing: .7px; }
+  .brand-name span { font-size: 6px; letter-spacing: 1px; }
+  .okko-movie-row { gap: 9px; }
+  .detail-cast-grid { grid-template-columns: minmax(0, 1fr); }
+  .okko-hero-actions, .hero-actions { flex-wrap: wrap; gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
