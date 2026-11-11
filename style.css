@@ -1330,3 +1330,17 @@ html body .okko-footer .brand > img.brand-logo {
     border-radius: 13px !important;
   }
 }
+
+/* Moderate corner radius for the supplied photo logo */
+html body .brand > img.brand-logo,
+html body .okko-header .brand > img.brand-logo,
+html body .okko-footer .brand > img.brand-logo {
+  border-radius: 6px !important;
+}
+@media (max-width: 650px) {
+  html body .brand > img.brand-logo,
+  html body .okko-header .brand > img.brand-logo,
+  html body .okko-footer .brand > img.brand-logo {
+    border-radius: 5px !important;
+  }
+}
