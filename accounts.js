@@ -145,8 +145,10 @@
     } catch { isAdmin=false; }
     let link=$('.admin-panel-nav-link',header);
     if(isAdmin && !link) { link=document.createElement('a'); link.className='top-cta admin-panel-nav-link'; link.href='admin.html'; link.textContent='Админ-панель'; }
+    const accountLink=$('.account-nav-link',header);
     const nav=$('.main-nav',header);
-    if(isAdmin && nav && link && link.parentElement!==nav) nav.appendChild(link);
+    if(isAdmin && link && accountLink && accountLink.parentElement===header && link.parentElement!==header) accountLink.insertAdjacentElement('afterend',link);
+    else if(isAdmin && link && nav && link.parentElement!==nav) nav.appendChild(link);
     if(!isAdmin && link) link.remove();
   }
   async function refreshUser() {

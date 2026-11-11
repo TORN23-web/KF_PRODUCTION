@@ -1368,3 +1368,29 @@ html body .okko-footer .brand > img.brand-logo {
   justify-self: start;
   margin-top: 2px;
 }
+
+
+/* Keep the admin action immediately beside the account action. */
+.okko-header > .admin-panel-nav-link {
+  order: 6;
+  margin-left: 8px !important;
+  margin-right: 18px !important;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (max-width: 650px) {
+  .okko-header > .admin-panel-nav-link {
+    margin-left: 7px !important;
+    margin-right: 14px !important;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+@media (max-width: 390px) {
+  .okko-header > .account-nav-link,
+  .okko-header > .admin-panel-nav-link {
+    padding-left: 7px;
+    padding-right: 7px;
+    font-size: 10px;
+  }
+}
