@@ -113,8 +113,9 @@
     let a=$('.account-nav-link',header);
     if(!a) {
       a=document.createElement('a'); a.className='top-cta account-nav-link'; a.href='account.html';
-      const menu=$('.menu-toggle',header); header.insertBefore(a,menu||null);
     }
+    const nav=$('.main-nav',header);
+    if(nav && a.parentElement!==nav) nav.appendChild(a);
     a.textContent=user?'Мой профиль':'Войти';
     a.setAttribute('aria-label', a.textContent);
   }
@@ -137,7 +138,9 @@
       }
     } catch { isAdmin=false; }
     let link=$('.admin-panel-nav-link',header);
-    if(isAdmin && !link) { link=document.createElement('a'); link.className='top-cta admin-panel-nav-link'; link.href='admin.html'; link.textContent='Админ-панель'; const menu=$('.menu-toggle',header); header.insertBefore(link,menu||null); }
+    if(isAdmin && !link) { link=document.createElement('a'); link.className='top-cta admin-panel-nav-link'; link.href='admin.html'; link.textContent='Админ-панель'; }
+    const nav=$('.main-nav',header);
+    if(isAdmin && nav && link && link.parentElement!==nav) nav.appendChild(link);
     if(!isAdmin && link) link.remove();
   }
   async function refreshUser() {

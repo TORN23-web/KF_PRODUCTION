@@ -924,3 +924,24 @@ footer, .okko-footer { border-top-color: var(--kf-line); }
   .okko-movie-card, .okko-watch-button, .button-primary,
   .top-cta, .okko-more-button, .button-outline { transition: none; }
 }
+
+
+/* Mobile navigation: keep account actions inside the hamburger panel */
+@media (max-width: 650px) {
+  .okko-header.menu-open .main-nav .account-nav-link,
+  .okko-header.menu-open .main-nav .admin-panel-nav-link {
+    display: flex !important;
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    margin: 8px 0 2px;
+    padding: 11px 14px;
+    border-radius: 9px;
+    white-space: normal;
+  }
+  .okko-header.menu-open .main-nav .admin-panel-nav-link {
+    background: rgba(169, 154, 255, .16);
+    color: #eeeaff;
+    border: 1px solid rgba(169, 154, 255, .4);
+  }
+}
