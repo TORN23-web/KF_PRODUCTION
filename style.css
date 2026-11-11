@@ -1298,3 +1298,35 @@ body {
   }
 }
 
+
+/* Hard override: same footprint as the original KF graphic mark */
+html body .brand > img.brand-logo,
+html body .okko-header .brand > img.brand-logo,
+html body .okko-footer .brand > img.brand-logo {
+  box-sizing: border-box !important;
+  display: block !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  max-width: 38px !important;
+  max-height: 38px !important;
+  flex: 0 0 38px !important;
+  object-fit: cover !important;
+  border-radius: 15px !important;
+  overflow: hidden !important;
+}
+@media (max-width: 650px) {
+  html body .brand > img.brand-logo,
+  html body .okko-header .brand > img.brand-logo,
+  html body .okko-footer .brand > img.brand-logo {
+    width: 31px !important;
+    height: 31px !important;
+    min-width: 31px !important;
+    min-height: 31px !important;
+    max-width: 31px !important;
+    max-height: 31px !important;
+    flex-basis: 31px !important;
+    border-radius: 13px !important;
+  }
+}
