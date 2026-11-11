@@ -1264,3 +1264,37 @@ body {
     flex-basis: 44px;
   }
 }
+
+/* Match the former KF graphic mark dimensions exactly */
+.brand-logo,
+.okko-header .brand-logo,
+.topbar .brand-logo,
+.okko-footer .brand-logo {
+  display: block !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  max-width: 38px !important;
+  max-height: 38px !important;
+  flex: 0 0 38px !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  border-radius: 10px !important;
+}
+@media (max-width: 600px) {
+  .brand-logo,
+  .okko-header .brand-logo,
+  .topbar .brand-logo,
+  .okko-footer .brand-logo {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    max-width: 34px !important;
+    max-height: 34px !important;
+    flex-basis: 34px !important;
+    border-radius: 9px !important;
+  }
+}
+
