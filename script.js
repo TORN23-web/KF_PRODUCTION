@@ -15,29 +15,10 @@ if ('IntersectionObserver' in window) {
 const topbar = document.querySelector('.topbar');
 const menuToggle = document.querySelector('.menu-toggle');
 menuToggle?.addEventListener('click', () => {
-  if (!topbar) return;
   const opened = topbar.classList.toggle('menu-open');
   menuToggle.setAttribute('aria-expanded', String(opened));
 });
-topbar?.querySelector('.main-nav')?.addEventListener('click', (event) => {
-  if (event.target.closest('a')) {
-    topbar.classList.remove('menu-open');
-    menuToggle?.setAttribute('aria-expanded', 'false');
-  }
-});
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && topbar?.classList.contains('menu-open')) {
-    topbar.classList.remove('menu-open');
-    menuToggle?.setAttribute('aria-expanded', 'false');
-    menuToggle?.focus();
-  }
-});
-document.addEventListener('click', (event) => {
-  if (topbar?.classList.contains('menu-open') && !topbar.contains(event.target)) {
-    topbar.classList.remove('menu-open');
-    menuToggle?.setAttribute('aria-expanded', 'false');
-  }
-});
+document.querySelectorAll('.main-nav a').forEach((link) => link.addEventListener('click', () => topbar?.classList.remove('menu-open')));
 
 const filterButtons = document.querySelectorAll('.filter-tab');
 function applyCatalogFilter(filter) {
