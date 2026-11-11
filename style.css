@@ -1200,3 +1200,31 @@ body {
   .okko-hero-content { padding-left: 16px; padding-right: 16px; }
   .okko-movie-row { gap: 9px; }
 }
+
+/* User-supplied KF Production artwork */
+.brand-logo {
+  display: block;
+  width: 164px;
+  height: 62px;
+  flex: 0 0 164px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 8px;
+}
+.okko-header .brand-logo, .topbar .brand-logo { width: 164px; height: 62px; flex-basis: 164px; }
+.okko-footer .brand-logo { width: 174px; height: 66px; flex-basis: 174px; }
+@media (max-width: 650px) {
+  .brand-logo, .okko-header .brand-logo, .topbar .brand-logo {
+    width: 140px;
+    height: 54px;
+    flex-basis: 140px;
+  }
+  .okko-footer .brand-logo { width: 150px; height: 58px; flex-basis: 150px; }
+}
+@media (max-width: 360px) {
+  .brand-logo, .okko-header .brand-logo, .topbar .brand-logo {
+    width: 124px;
+    height: 48px;
+    flex-basis: 124px;
+  }
+}
