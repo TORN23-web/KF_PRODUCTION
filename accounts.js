@@ -114,8 +114,9 @@
     if(!a) {
       a=document.createElement('a'); a.className='top-cta account-nav-link'; a.href='account.html';
     }
-    const nav=$('.main-nav',header);
-    if(nav && a.parentElement!==nav) nav.appendChild(a);
+    const menu=$('.menu-toggle',header);
+    if(menu && a.parentElement!==header) menu.insertAdjacentElement('afterend',a);
+    else if(!menu && a.parentElement!==header) header.appendChild(a);
     a.textContent=user?'Мой профиль':'Войти';
     a.setAttribute('aria-label', a.textContent);
   }
