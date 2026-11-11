@@ -91,8 +91,13 @@
     if (url === '/api/profile' && options.method === 'POST') {
       const { data: { user }, error: userError } = await sb.auth.getUser(); if (userError) fail(userError);
       if (!user) throw new Error('Сначала войди в аккаунт.');
-      const { error } = await sb.from('profiles').upsert({ id: user.id, avatar_url: body.avatar });
-      if (error) fail(error); return { user: { id: user.id, email: user.email, avatar: body.avatar } };
+      const { data: existing, error: readError } = await sb.from('profiles').select('username,avatar_url').eq('id', user.id).maybeSingle();
+      if (readError) fail(readError);
+      const username = body.username === undefined ? (existing?.username || (user.email || '').split('@')[0]) : String(body.username).trim();
+      if (username.length < 2 || username.length > 24 || !/^[\p{L}\p{N} _.-]+$/u.test(username)) throw new Error('Имя должно содержать 2–24 символа: буквы, цифры, пробел, точку, дефис или подчёркивание.');
+      const avatar = body.avatar === undefined ? (existing?.avatar_url || null) : body.avatar;
+      const { error } = await sb.from('profiles').upsert({ id: user.id, username, avatar_url: avatar });
+      if (error) fail(error); return { user: { id: user.id, email: user.email, avatar, username } };
     }
     if (url === '/api/progress' && options.method === 'POST') {
       const { data: { user }, error: userError } = await sb.auth.getUser(); if (userError) fail(userError);
@@ -227,6 +232,7 @@
     auth.hidden=!!currentUser; profile.hidden=!currentUser;
     if(!currentUser) return;
     $('#accountEmail').textContent=currentUser.email;
+    const usernameInput=$('#accountUsername'); if(usernameInput) usernameInput.value=currentUser.username||'';
     const avatar=$('#accountAvatar'); avatar.src=currentUser.avatar||'';
     avatar.hidden=!currentUser.avatar;
     $('#accountAvatarPlaceholder').hidden=!!currentUser.avatar;
@@ -265,7 +271,12 @@
         const { data: { user }, error: userError } = await sb.auth.getUser();
         if (userError) throw userError;
         if (!user) { $('#authMessage').textContent='Не удалось восстановить вход. Попробуй войти ещё раз.'; return; }
-        currentUser={id:user.id,email:user.email,avatar:null,username:(user.email||'').split('@')[0]};
+        let savedProfile=null;
+        try {
+          const {data,error:profileError}=await sb.from('profiles').select('username,avatar_url').eq('id',user.id).maybeSingle();
+          if(!profileError) savedProfile=data;
+        } catch {}
+        currentUser={id:user.id,email:user.email,avatar:savedProfile?.avatar_url||null,username:savedProfile?.username||(user.email||'').split('@')[0]};
         makeHeaderLink(currentUser);
         $('#authMessage').textContent=''; renderAccount();
         await refreshAdminLink();
@@ -273,6 +284,24 @@
       } catch(err){$('#authMessage').textContent=err.message;} finally {submit.disabled=false;}
     });
     $('#logoutButton').addEventListener('click',async()=>{try{await api('/api/logout',{method:'POST',body:'{}'});currentUser=null;renderAccount();}catch(e){$('#accountMessage').textContent=e.message;}});
+    $('#usernameForm').addEventListener('submit',async e=>{
+      e.preventDefault();
+      const input=$('#accountUsername'), button=$('#usernameForm button[type="submit"]');
+      const username=input.value.trim();
+      if(username.length<2||username.length>24||!/^[\p{L}\p{N} _.-]+$/u.test(username)){
+        $('#accountMessage').textContent='Имя должно содержать 2–24 символа: буквы, цифры, пробел, точку, дефис или подчёркивание.';
+        return;
+      }
+      button.disabled=true; $('#accountMessage').textContent='Сохраняем имя…';
+      try{
+        const result=await api('/api/profile',{method:'POST',body:JSON.stringify({username})});
+        currentUser=result.user;
+        input.value=currentUser.username;
+        $('#accountMessage').textContent='Имя аккаунта сохранено.';
+        makeHeaderLink(currentUser);
+      }catch(error){$('#accountMessage').textContent=error.message;}
+      finally{button.disabled=false;}
+    });
     $('#avatarFile').addEventListener('change',async()=>{
       const file=$('#avatarFile').files[0]; if(!file)return;
       if(!/^image\/(png|jpeg|webp|gif)$/.test(file.type)||file.size>700*1024){$('#accountMessage').textContent='Выбери PNG, JPG, WebP или GIF размером до 700 КБ.';return;}

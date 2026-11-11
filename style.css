@@ -1350,3 +1350,21 @@ html body .okko-footer .brand > img.brand-logo {
 .okko-header > .account-nav-link { order:5; margin-left:auto !important; margin-right:18px !important; flex:0 0 auto; }
 @media (max-width:650px) { .okko-header > .account-nav-link { margin-left:auto !important; margin-right:14px !important; padding-left:12px; padding-right:12px; } }
 @media (max-width:360px) { .okko-header > .account-nav-link { margin-right:10px !important; } }
+
+
+/* Account display-name editor */
+.account-username-form {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 320px);
+  margin: 12px 0 14px;
+}
+.account-username-form input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.account-username-form .account-primary-button {
+  justify-self: start;
+  margin-top: 2px;
+}
