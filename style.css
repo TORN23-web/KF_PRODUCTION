@@ -945,3 +945,258 @@ footer, .okko-footer { border-top-color: var(--kf-line); }
     border: 1px solid rgba(169, 154, 255, .4);
   }
 }
+
+
+/* KF Production — visual refresh v2 */
+:root {
+  --kf-cyan: #55d8f4;
+  --kf-blue: #3568df;
+  --kf-violet: #bd45e7;
+  --kf-surface: #111522;
+  --kf-border: rgba(188, 205, 255, .14);
+}
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(48, 119, 225, .13), transparent 34rem),
+    radial-gradient(ellipse at 92% 24%, rgba(173, 54, 210, .10), transparent 32rem),
+    #080a12;
+  color: #f5f6ff;
+}
+.topbar.okko-header, .topbar {
+  height: 78px;
+  padding-left: clamp(16px, 5vw, 76px);
+  padding-right: clamp(16px, 5vw, 76px);
+  background: rgba(7, 9, 17, .88);
+  border-bottom: 1px solid rgba(180, 202, 255, .13);
+  box-shadow: 0 8px 30px rgba(0,0,0,.12);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+.brand { gap: 13px; flex-shrink: 0; }
+.brand-mark {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  display: block;
+  overflow: hidden;
+  border-radius: 15px;
+  background: url('assets/kf-production-logo.png?v=2') center / cover no-repeat !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  text-indent: -9999px;
+  border: 1px solid rgba(255,255,255,.28);
+  box-shadow: 0 8px 26px rgba(55, 126, 231, .22), 0 0 0 1px rgba(190,130,255,.10);
+}
+.brand-name {
+  font-size: 14px;
+  line-height: 1.1;
+  letter-spacing: 2px;
+  color: #f6f7ff;
+}
+.brand-name span {
+  font-size: 8px;
+  letter-spacing: 3px;
+  color: #aab2cb;
+  margin-top: 5px;
+}
+.main-nav { gap: clamp(16px, 2.6vw, 34px); }
+.main-nav a {
+  font-size: 13px;
+  font-weight: 600;
+  color: #b9c0d6;
+}
+.top-cta {
+  border-radius: 12px;
+  padding: 13px 18px;
+  background: linear-gradient(110deg, rgba(74,190,239,.10), rgba(174,84,226,.10));
+  border-color: rgba(147,176,255,.24);
+}
+.menu-toggle {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid rgba(190,205,255,.18);
+  border-radius: 12px;
+  background: rgba(255,255,255,.045);
+}
+.okko-hero {
+  min-height: min(790px, calc(100svh - 78px));
+  display: flex;
+  align-items: center;
+  background: #0a0d18;
+  border-bottom: 1px solid rgba(190,205,255,.10);
+}
+.okko-hero-art {
+  background-size: cover !important;
+  background-position: center right !important;
+  opacity: .92;
+  filter: saturate(1.08);
+}
+.okko-hero-shade {
+  background:
+    linear-gradient(90deg, rgba(7,9,16,.98) 0%, rgba(7,9,16,.82) 38%, rgba(7,9,16,.24) 78%, rgba(7,9,16,.16) 100%),
+    linear-gradient(0deg, rgba(7,9,16,.66), transparent 46%);
+}
+.okko-hero-content {
+  width: min(720px, 90%);
+  max-width: 720px;
+  padding: clamp(34px, 6vw, 88px);
+  z-index: 2;
+}
+.okko-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 13px;
+  border: 1px solid rgba(166,191,255,.20);
+  border-radius: 99px;
+  background: rgba(12,17,31,.56);
+  backdrop-filter: blur(10px);
+  font-size: 10px;
+}
+.okko-hero h1 {
+  margin: 23px 0 17px;
+  font-size: clamp(54px, 7.5vw, 96px);
+  line-height: .98;
+  letter-spacing: -.055em;
+  font-weight: 850;
+}
+.okko-hero h1 em {
+  font-style: normal;
+  background: linear-gradient(100deg, #7de5ff, #a7a9ff 55%, #dc8df1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.okko-hero-content p {
+  max-width: 520px;
+  color: #c0c6d8;
+  font-size: clamp(14px, 1.35vw, 17px);
+  line-height: 1.75;
+}
+.okko-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.okko-watch-button, .okko-more-button {
+  min-height: 50px;
+  padding: 0 21px;
+  border-radius: 13px;
+  font-size: 13px;
+  font-weight: 750;
+}
+.okko-watch-button {
+  box-shadow: 0 10px 32px rgba(94,151,255,.22);
+}
+.okko-more-button { background: rgba(255,255,255,.07); }
+.okko-row-section {
+  padding-top: clamp(54px, 7vw, 88px);
+  padding-bottom: clamp(58px, 7vw, 92px);
+}
+.okko-section-title h2 {
+  font-size: clamp(27px, 3.4vw, 39px);
+  letter-spacing: -.035em;
+}
+.okko-movie-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 250px));
+  gap: clamp(14px, 2vw, 24px);
+}
+.okko-movie-card {
+  min-width: 0;
+  border-radius: 17px;
+  transition: transform .25s ease, filter .25s ease;
+}
+.okko-movie-card:hover { transform: translateY(-6px); filter: brightness(1.08); }
+.okko-poster {
+  width: 100%;
+  border-radius: 17px;
+  overflow: hidden;
+  box-shadow: 0 14px 34px rgba(0,0,0,.28);
+  border: 1px solid rgba(210,220,255,.14);
+}
+.okko-movie-meta { padding: 12px 3px 0; }
+.okko-movie-meta b { font-size: 15px; }
+.okko-footer, footer {
+  padding-left: clamp(18px, 5vw, 76px);
+  padding-right: clamp(18px, 5vw, 76px);
+  background: rgba(7,9,16,.72);
+  border-top: 1px solid rgba(190,205,255,.12);
+}
+.account-main, .admin-main, .detail-main, .watch-page {
+  width: min(1160px, calc(100% - 40px));
+  margin-left: auto;
+  margin-right: auto;
+}
+@media (min-width: 1100px) {
+  .okko-hero { min-height: min(820px, calc(100svh - 78px)); }
+}
+@media (max-width: 900px) {
+  .topbar.okko-header, .topbar { padding-left: 22px; padding-right: 22px; }
+  .main-nav { gap: 14px; }
+  .main-nav a { font-size: 12px; }
+  .okko-hero-content { padding-left: 36px; }
+}
+@media (max-width: 650px) {
+  .topbar.okko-header, .topbar {
+    height: 68px;
+    padding-left: 14px;
+    padding-right: 12px;
+  }
+  .brand { gap: 9px; }
+  .brand-mark { width: 44px; height: 44px; flex-basis: 44px; border-radius: 13px; }
+  .brand-name { font-size: 12px; letter-spacing: 1.3px; }
+  .brand-name span { font-size: 7px; letter-spacing: 2px; margin-top: 4px; }
+  .menu-toggle { display: grid; place-items: center; font-size: 22px; }
+  .okko-header.menu-open .main-nav {
+    top: 67px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    padding: 12px 16px 16px;
+    border: 1px solid rgba(170,190,255,.2);
+    border-radius: 0 0 17px 17px;
+    background: rgba(10,13,24,.98);
+    box-shadow: 0 22px 45px rgba(0,0,0,.48);
+  }
+  .okko-header.menu-open .main-nav a {
+    min-height: 48px;
+    padding: 0 5px;
+    font-size: 14px;
+  }
+  .okko-hero {
+    min-height: 640px;
+    min-height: min(760px, calc(100svh - 68px));
+    align-items: flex-end;
+  }
+  .okko-hero-art {
+    background-size: cover !important;
+    background-position: 60% center !important;
+    opacity: .7;
+  }
+  .okko-hero-shade {
+    background:
+      linear-gradient(0deg, rgba(7,9,16,.99) 0%, rgba(7,9,16,.86) 37%, rgba(7,9,16,.22) 100%),
+      linear-gradient(90deg, rgba(7,9,16,.55), transparent);
+  }
+  .okko-hero-content {
+    width: 100%;
+    padding: 36px 20px 48px;
+  }
+  .okko-label { font-size: 9px; }
+  .okko-hero h1 { font-size: clamp(48px, 15vw, 68px); margin: 18px 0 12px; }
+  .okko-hero-content p { font-size: 13px; line-height: 1.65; }
+  .okko-hero-actions { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 20px; }
+  .okko-watch-button, .okko-more-button { width: 100%; justify-content: center; min-height: 49px; }
+  .okko-row-section { padding: 44px 18px 54px; }
+  .okko-movie-row { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+  .okko-poster { border-radius: 13px; }
+  .okko-movie-meta b { font-size: 13px; }
+  .okko-movie-meta span { font-size: 10px; }
+  .okko-footer, footer { padding: 22px 18px; }
+  .account-main, .admin-main, .detail-main, .watch-page { width: calc(100% - 28px); }
+}
+@media (max-width: 360px) {
+  .brand-mark { width: 40px; height: 40px; flex-basis: 40px; }
+  .brand-name { font-size: 10px; }
+  .brand-name span { font-size: 6px; }
+  .okko-hero-content { padding-left: 16px; padding-right: 16px; }
+  .okko-movie-row { gap: 9px; }
+}
