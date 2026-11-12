@@ -1,0 +1,18 @@
+{
+  "name": "kf-production-ios-cloud",
+  "version": "1.0.0",
+  "private": true,
+  "description": "KF Production iOS wrapper; loads the live website remotely",
+  "scripts": {
+    "ios:add": "cap add ios",
+    "ios:sync": "cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "7.6.10"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "7.6.10",
+    "@capacitor/ios": "7.6.10",
+    "typescript": "5.9.3"
+  }
+}
