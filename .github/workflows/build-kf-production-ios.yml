@@ -1,0 +1,72 @@
+name: Build KF Production for iOS
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ios-cloud/**"
+      - ".github/workflows/build-kf-production-ios.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    name: Build iOS app on macOS
+    runs-on: macos-15
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: ios-cloud
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          xcodebuild -version
+          xcode-select -p
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ios-cloud/package-lock.json
+
+      - name: Install JavaScript dependencies
+        run: npm install
+
+      - name: Generate native iOS project
+        run: |
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Install CocoaPods
+        working-directory: ios-cloud/ios/App
+        run: pod install
+
+      - name: Build unsigned iOS Simulator app
+        working-directory: ios-cloud
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package simulator build
+        run: |
+          cd build/DerivedData/Build/Products/Release-iphonesimulator
+          /usr/bin/zip -r "$GITHUB_WORKSPACE/KF-Production-iOS-Simulator.zip" App.app
+
+      - name: Upload simulator build
+        uses: actions/upload-artifact@v4
+        with:
+          name: KF-Production-iOS-Simulator
+          path: KF-Production-iOS-Simulator.zip
+          if-no-files-found: error
+          retention-days: 14
