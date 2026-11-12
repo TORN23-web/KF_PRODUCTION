@@ -32,8 +32,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: ios-cloud/package-lock.json
 
       - name: Install JavaScript dependencies
         run: npm install
@@ -51,7 +49,7 @@ jobs:
         working-directory: ios-cloud
         run: |
           xcodebuild \
-            -project ios/App/App.xcodeproj \
+            -workspace ios/App/App.xcworkspace \
             -scheme App \
             -sdk iphonesimulator \
             -configuration Release \
