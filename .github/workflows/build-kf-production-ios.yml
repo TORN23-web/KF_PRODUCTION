@@ -41,16 +41,16 @@ jobs:
           npx cap add ios
           npx cap sync ios
 
-      - name: Apply Android launcher icon
+      - name: Apply KF Production app icon
         run: |
-          mkdir -p build ios/App/App/Assets.xcassets/AppIcon.appiconset
+          mkdir -p ios/App/App/Assets.xcassets/AppIcon.appiconset
           python3 - <<'PY'
           import base64
           from pathlib import Path
-          encoded = Path("assets/android-app-icon.png.b64").read_text().strip()
-          Path("build/android-icon-source.png").write_bytes(base64.b64decode(encoded))
+          encoded = Path("AppIcon-1024.png.base64").read_text().strip()
+          icon = base64.b64decode(encoded, validate=True)
+          Path("ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png").write_bytes(icon)
           PY
-          sips -z 1024 1024 build/android-icon-source.png --out ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png >/dev/null
           cat > ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json <<'JSON'
           {
             "images": [
