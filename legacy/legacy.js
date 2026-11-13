@@ -28,7 +28,7 @@
   function assetPath(p){p=String(p||'');if(!p)return '../assets/zona-0.jpg';if(/^https?:|^data:|^\//i.test(p)||p.indexOf('../')===0)return p;return '../'+p;}
   function query(name){var q=window.location.search.substring(1).split('&'),i,p;for(i=0;i<q.length;i++){p=q[i].split('=');if(decodeURIComponent(p[0]||'')===name)return decodeURIComponent((p[1]||'').replace(/\+/g,' '));}return '';}
   function baseHeader(){var h='<header class="top"><a class="brand" href="index.html"><img src="../assets/kf-production-logo.png" alt="">KF Production<span class="lite">ЛАЙТ</span></a><nav class="nav"><a href="index.html">Главная</a><a href="index.html#catalog">Каталог</a><a href="account.html">Мой профиль</a><a href="about.html">О проекте</a></nav></header>';return h;}
-  function renderShell(body){document.body.innerHTML=baseHeader()+body+'<footer class="footer">© 2026 KF Production · Лайт-версия для старых браузеров</footer>';}
+  function renderShell(body){document.body.innerHTML=baseHeader()+body+'<footer class="footer">© 2026 KF Production · Лайт-версия для старых браузеров</footer>';withToken(function(err,s){if(err||!s)return;request(apiBase+'/functions/v1/kf-admin/me','GET',null,s.access_token,function(e,d){if(!e&&d&&d.authenticated){var nav=document.getElementsByTagName('nav')[0];if(nav){var a=document.createElement('a');a.href='admin.html';a.innerHTML='Админ-панель';nav.appendChild(a);}}});});}
   function catalog(done){
     request(apiBase+'/functions/v1/kf-admin/public/catalog','GET',null,null,function(err,d){done(err,(d&&d.items)||[]);});
   }
