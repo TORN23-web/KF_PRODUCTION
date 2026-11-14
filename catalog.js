@@ -12,8 +12,9 @@
     const cast=Array.isArray(item.cast)?item.cast:(typeof item.cast==='string'?item.cast.split(/[,;/]/):[]);
     a.dataset.cast=cast.map(x=>Array.isArray(x)?x.join(' '):String(x||'')).join(' ').toLocaleLowerCase('ru');
     const poster=document.createElement('div');poster.className='okko-poster okko-poster-three';
+    if(item.id==='zona0')poster.classList.add('zona0-poster');
     const image=safeUrl(item.poster);if(image)poster.style.backgroundImage='url("'+image+'")';
-    poster.style.backgroundSize='cover';poster.style.backgroundPosition='center';
+    poster.style.backgroundSize=item.id==='zona0'?'contain':'cover';poster.style.backgroundPosition='center';poster.style.backgroundRepeat='no-repeat';
     const kicker=document.createElement('span');kicker.className='okko-poster-kicker';kicker.textContent=item.kind==='series'?'KF SERIES':'KF ORIGINALS';
     const title=document.createElement('b');title.textContent=item.title||'Без названия';
     const play=document.createElement('span');play.className='okko-card-play';play.textContent='▶';poster.append(kicker,title,play);

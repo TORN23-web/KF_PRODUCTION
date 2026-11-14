@@ -1400,3 +1400,6 @@ html body .okko-footer .brand > img.brand-logo {
 .okko-movie-card[hidden] {
   display: none !important;
 }
+
+/* Постер ЗОНА 0: показываем исходное изображение полностью, без обрезки */
+.okko-poster.zona0-poster{background-size:contain!important;background-position:center!important;background-repeat:no-repeat!important;background-color:#000!important}
