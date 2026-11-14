@@ -56,6 +56,7 @@
           &&(!selectedGenre||genres.some(v=>v===selectedGenre||v.includes(selectedGenre)||selectedGenre.includes(v)))
           &&(!selectedYear||cardYear===selectedYear);
         a.hidden=!matches;
+        a.style.display=matches?'':'none';
       });
       document.querySelectorAll('#adminMoviesRow .okko-movie-row,.series-row .okko-movie-row').forEach(row=>{
         [...row.querySelectorAll('.okko-movie-card')].sort((a,b)=>{
