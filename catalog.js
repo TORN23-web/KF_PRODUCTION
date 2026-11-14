@@ -39,12 +39,20 @@
     [...years].sort((a,b)=>Number(b)-Number(a)).forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;$('#catalogYear').append(o);});
     const search=$('#catalogSearch'),kind=$('#catalogKind'),genre=$('#catalogGenre'),year=$('#catalogYear'),sort=$('#catalogSort');
     const normalize=value=>String(value||'').normalize('NFKC').toLocaleLowerCase('ru').replace(/ё/g,'е').replace(/\s+/g,' ').trim();
+    const results=document.createElement('section');
+    results.id='catalogSearchResults';results.className='okko-row-section okko-featured';
+    results.innerHTML='<div class="okko-section-title"><div><span class="okko-overline">KF PRODUCTION</span><h2>Результаты поиска</h2></div></div><div class="okko-movie-row"></div>';
+    bar.insertAdjacentElement('afterend',results);
+    const resultRow=results.querySelector('.okko-movie-row');
     const apply=()=>{
       const queryParts=normalize(search.value).split(' ').filter(Boolean);
+      const searchMode=queryParts.length>0;
       const selectedKind=kind.value;
       const selectedGenre=normalize(genre.value);
       const selectedYear=year.value;
       const cards=[...document.querySelectorAll('#adminMoviesRow .okko-movie-card,.series-row .okko-movie-card')];
+      const matched=[];
+      const matchedHrefs=new Set();
       cards.forEach(a=>{
         const title=normalize(a.dataset.title||a.querySelector('.okko-poster b')?.textContent);
         const genres=normalize(a.dataset.genre).split(/[,;/|]+/).map(v=>v.trim()).filter(Boolean);
@@ -58,6 +66,10 @@
           &&(!selectedYear||cardYear===selectedYear);
         a.hidden=!matches;
         a.style.display=matches?'':'none';
+        if(matches&&searchMode){
+          const href=a.getAttribute('href');
+          if(!matchedHrefs.has(href)){matchedHrefs.add(href);matched.push(a);}
+        }
       });
       document.querySelectorAll('#adminMoviesRow .okko-movie-row,.series-row .okko-movie-row').forEach(row=>{
         [...row.querySelectorAll('.okko-movie-card')].sort((a,b)=>{
@@ -66,6 +78,22 @@
           return sort.value==='old'?ay-by:by-ay;
         }).forEach(el=>row.append(el));
       });
+      const hero=$('.recommended-hero'),seriesSection=$('.series-row'),originals=$('#adminMoviesRow');
+      if(searchMode){
+        if(hero)hero.hidden=true;
+        if(seriesSection)seriesSection.hidden=true;
+        if(originals)originals.hidden=true;
+        results.hidden=false;
+        resultRow.replaceChildren();
+        matched.forEach(a=>resultRow.append(a.cloneNode(true)));
+        if(!matched.length){const empty=document.createElement('p');empty.className='catalog-search-empty';empty.textContent='Ничего не найдено. Попробуй изменить запрос или фильтры.';resultRow.append(empty);}
+      }else{
+        if(hero)hero.hidden=false;
+        if(seriesSection)seriesSection.hidden=false;
+        if(originals)originals.hidden=false;
+        results.hidden=true;
+        resultRow.replaceChildren();
+      }
     };
     search.addEventListener('input',apply);
     search.addEventListener('search',apply);
