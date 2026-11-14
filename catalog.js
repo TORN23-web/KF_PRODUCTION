@@ -91,7 +91,7 @@
     if(!originals){originals=document.createElement('section');originals.id='adminMoviesRow';originals.className='okko-row-section okko-featured';originals.innerHTML='<span id="films"></span><div class="okko-section-title"><div><span class="okko-overline">KF ORIGINALS</span><h2>Фильмы</h2></div></div><div class="okko-movie-row"></div>';mainInsert(originals,seriesSection);}
     const row=originals.querySelector('.okko-movie-row');
     row.replaceChildren();
-    const originalItems=items.filter(x=>x.kind!=='series'||x.id==='zona0');
+    const originalItems=[...new Map(items.filter(x=>x.kind!=='series'||x.id==='zona0').map(x=>[String(x.id),x])).values()];
     originalItems.forEach(x=>row.append(card(x)));
     if(!originalItems.length){const empty=document.createElement('div');empty.className='kf-originals-empty';empty.textContent='Новые оригинальные фильмы KF Production скоро появятся здесь.';row.append(empty);}
     addToolbar(items);setupHero(allItems);updateCountdowns();setInterval(updateCountdowns,60000);
