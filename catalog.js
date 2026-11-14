@@ -38,24 +38,35 @@
     [...genres.values()].sort((a,b)=>a.localeCompare(b,'ru')).forEach(g=>{const o=document.createElement('option');o.value=g.toLocaleLowerCase('ru');o.textContent=g;$('#catalogGenre').append(o);});
     [...years].sort((a,b)=>Number(b)-Number(a)).forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;$('#catalogYear').append(o);});
     const search=$('#catalogSearch'),kind=$('#catalogKind'),genre=$('#catalogGenre'),year=$('#catalogYear'),sort=$('#catalogSort');
+    const normalize=value=>String(value||'').normalize('NFKC').toLocaleLowerCase('ru').replace(/\s+/g,' ').trim();
     const apply=()=>{
-      const q=search.value.trim().toLocaleLowerCase('ru');
+      const q=normalize(search.value);
+      const selectedKind=kind.value;
+      const selectedGenre=normalize(genre.value);
+      const selectedYear=year.value;
       const cards=[...document.querySelectorAll('#adminMoviesRow .okko-movie-card,.series-row .okko-movie-card')];
       cards.forEach(a=>{
-        const hay=[a.dataset.title,a.dataset.genre,a.dataset.cast,a.textContent].join(' ').toLocaleLowerCase('ru');
-        const genreList=(a.dataset.genre||'').split(/[,;/|]+/).map(v=>v.trim());
-        const matches=(!q||hay.includes(q))&&(!kind.value||a.dataset.kind===kind.value)&&(!genre.value||genreList.some(v=>v.includes(genre.value)))&&(!year.value||a.dataset.year===year.value);
+        const title=normalize(a.dataset.title||a.querySelector('.okko-poster b')?.textContent);
+        const genres=normalize(a.dataset.genre).split(/[,;/|]+/).map(v=>v.trim()).filter(Boolean);
+        const hay=normalize([title,a.dataset.genre,a.dataset.cast,a.textContent].join(' '));
+        const cardKind=a.dataset.kind||(a.closest('.series-row')?'series':'movie');
+        const cardYear=String(a.dataset.year||'');
+        const matches=(!q||hay.includes(q))
+          &&(!selectedKind||cardKind===selectedKind)
+          &&(!selectedGenre||genres.some(v=>v===selectedGenre||v.includes(selectedGenre)||selectedGenre.includes(v)))
+          &&(!selectedYear||cardYear===selectedYear);
         a.hidden=!matches;
       });
-      document.querySelectorAll('#adminMoviesRow,.series-row').forEach(section=>{
-        const row=section.querySelector('.okko-movie-row');if(!row)return;
+      document.querySelectorAll('#adminMoviesRow .okko-movie-row,.series-row .okko-movie-row').forEach(row=>{
         [...row.querySelectorAll('.okko-movie-card')].sort((a,b)=>{
-          if(sort.value==='title')return a.dataset.title.localeCompare(b.dataset.title,'ru');
-          return sort.value==='old'?Number(a.dataset.year||0)-Number(b.dataset.year||0):Number(b.dataset.year||0)-Number(a.dataset.year||0);
+          if(sort.value==='title')return normalize(a.dataset.title).localeCompare(normalize(b.dataset.title),'ru');
+          const ay=Number(a.dataset.year)||0,by=Number(b.dataset.year)||0;
+          return sort.value==='old'?ay-by:by-ay;
         }).forEach(el=>row.append(el));
       });
     };
-    [search,kind,genre,year,sort].forEach(el=>el.addEventListener(el===search?'input':'change',apply));
+    search.addEventListener('input',apply);
+    [kind,genre,year,sort].forEach(el=>el.addEventListener('change',apply));
     apply();
   }
   function setupHero(items){
