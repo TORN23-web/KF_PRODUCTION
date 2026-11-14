@@ -1,6 +1,25 @@
 (() => {
   const $ = (s, root=document) => root.querySelector(s);
   let supabaseClientPromise;
+  let activeProfileId = localStorage.getItem('kf-active-profile') || '';
+  async function resolveProfile(sb, user) {
+    if (activeProfileId) {
+      const {data,error}=await sb.from('kf_profiles').select('id').eq('id',activeProfileId).eq('user_id',user.id).maybeSingle();
+      if (!error && data) return data.id;
+      activeProfileId='';
+      localStorage.removeItem('kf-active-profile');
+    }
+    const {data,error}=await sb.from('kf_profiles').select('id').eq('user_id',user.id).eq('is_default',true).maybeSingle();
+    if (error) throw error;
+    if (data) activeProfileId=data.id;
+    else {
+      const created=await sb.from('kf_profiles').insert({user_id:user.id,name:'Основной',is_default:true}).select('id').single();
+      if(created.error) throw created.error;
+      activeProfileId=created.data.id;
+    }
+    if (activeProfileId) localStorage.setItem('kf-active-profile',activeProfileId);
+    return activeProfileId || null;
+  }
   const getSupabase = async () => {
     if (supabaseClientPromise) return supabaseClientPromise;
     supabaseClientPromise = (async () => {
@@ -69,10 +88,23 @@
     if (url === '/api/library') {
       const { data: { user }, error: userError } = await sb.auth.getUser(); if (userError) fail(userError);
       if (!user) return { favorites: [], progress: {} };
-      const [f, p] = await Promise.all([
-        sb.from('favorites').select('film_id').eq('user_id', user.id),
-        sb.from('watch_progress').select('film_id,position_seconds,duration_seconds,updated_at').eq('user_id', user.id)
-      ]);
+      let profileId=null;try{profileId=await resolveProfile(sb,user);}catch(profileError){console.warn('KF profiles schema is not applied yet:',profileError);}
+      let f,p;
+      if(profileId){
+        [f,p]=await Promise.all([
+          sb.from('favorites').select('film_id').eq('user_id',user.id).eq('profile_id',profileId),
+          sb.from('watch_progress').select('film_id,position_seconds,duration_seconds,updated_at').eq('user_id',user.id).eq('profile_id',profileId)
+        ]);
+        if(f.error||p.error)[f,p]=await Promise.all([
+          sb.from('favorites').select('film_id').eq('user_id',user.id),
+          sb.from('watch_progress').select('film_id,position_seconds,duration_seconds,updated_at').eq('user_id',user.id)
+        ]);
+      }else{
+        [f,p]=await Promise.all([
+          sb.from('favorites').select('film_id').eq('user_id',user.id),
+          sb.from('watch_progress').select('film_id,position_seconds,duration_seconds,updated_at').eq('user_id',user.id)
+        ]);
+      }
       if (f.error) fail(f.error); if (p.error) fail(p.error);
       const progress = {};
       (p.data || []).forEach(row => { progress[row.film_id] = { id: row.film_id, time: row.position_seconds, duration: row.duration_seconds || 0, updatedAt: Date.parse(row.updated_at) || 0 }; });
@@ -81,12 +113,18 @@
     if (url === '/api/favorites' && options.method === 'POST') {
       const { data: { user }, error: userError } = await sb.auth.getUser(); if (userError) fail(userError);
       if (!user) throw new Error('Сначала войди в аккаунт.');
-      const { data: existing, error: readError } = await sb.from('favorites').select('id').eq('user_id', user.id).eq('film_id', body.id).maybeSingle();
+      let profileId=null;try{profileId=await resolveProfile(sb,user);}catch(_){}
+      let query=sb.from('favorites').select('id').eq('user_id',user.id).eq('film_id',body.id);
+      if(profileId)query=query.eq('profile_id',profileId);
+      let {data:existing,error:readError}=await query.maybeSingle();
+      if(readError&&profileId){const fallback=await sb.from('favorites').select('id').eq('user_id',user.id).eq('film_id',body.id).maybeSingle();existing=fallback.data;readError=fallback.error;}
       if (readError) fail(readError);
       if (existing) {
         const { error } = await sb.from('favorites').delete().eq('id', existing.id); if (error) fail(error); return { isFavorite: false };
       }
-      const { error } = await sb.from('favorites').insert({ user_id: user.id, film_id: body.id }); if (error) fail(error); return { isFavorite: true };
+      let inserted=await sb.from('favorites').insert({ user_id:user.id, profile_id:profileId, film_id:body.id });
+      if(inserted.error&&profileId)inserted=await sb.from('favorites').insert({user_id:user.id,film_id:body.id});
+      if (inserted.error) fail(inserted.error); return { isFavorite: true };
     }
     if (url === '/api/profile' && options.method === 'POST') {
       const { data: { user }, error: userError } = await sb.auth.getUser(); if (userError) fail(userError);
@@ -102,8 +140,11 @@
     if (url === '/api/progress' && options.method === 'POST') {
       const { data: { user }, error: userError } = await sb.auth.getUser(); if (userError) fail(userError);
       if (!user) return { ok: true };
-      const { error } = await sb.from('watch_progress').upsert({ user_id: user.id, film_id: body.id, position_seconds: Math.max(0, Number(body.time) || 0), duration_seconds: Math.max(0, Number(body.duration) || 0), updated_at: new Date().toISOString() }, { onConflict: 'user_id,film_id' });
-      if (error) fail(error); return { ok: true };
+      let profileId=null;try{profileId=await resolveProfile(sb,user);}catch(_){}
+      const progress={user_id:user.id,profile_id:profileId,film_id:body.id,position_seconds:Math.max(0,Number(body.time)||0),duration_seconds:Math.max(0,Number(body.duration)||0),updated_at:new Date().toISOString()};
+      let saved=profileId?await sb.from('watch_progress').upsert(progress,{onConflict:'user_id,profile_id,film_id'}):await sb.from('watch_progress').upsert(progress,{onConflict:'user_id,film_id'});
+      if(saved.error&&profileId)saved=await sb.from('watch_progress').upsert({user_id:user.id,film_id:body.id,position_seconds:progress.position_seconds,duration_seconds:progress.duration_seconds,updated_at:progress.updated_at},{onConflict:'user_id,film_id'});
+      if (saved.error) fail(saved.error); return { ok: true };
     }
     // Admin and dynamic catalogue endpoints still belong to the existing Node.js backend.
     const response = await fetch(url, { credentials:'same-origin', headers:{'Content-Type':'application/json', ...(options.headers||{})}, ...options });
@@ -224,9 +265,24 @@
       const wrap=document.createElement('div'); wrap.className='account-progress-track';
       const fill=document.createElement('span'); fill.style.width=Math.max(0,Math.min(100,progress.time/progress.duration*100))+'%'; wrap.append(fill); copy.append(wrap);
       const time=document.createElement('small'); time.textContent='Продолжить с '+formatTime(progress.time); copy.append(time);
-      a.href='player.html?video='+encodeURIComponent('films/zona-0-episode1.mp4')+'&title='+encodeURIComponent('ЗОНА 0 — 1 серия')+'&kind=series&id=zona0';
+      a.href='player.html?video='+encodeURIComponent(item.video)+'&title='+encodeURIComponent(item.videoTitle||item.title)+'&kind='+(item.kind==='СЕРИАЛ'?'series':'movie')+'&id='+encodeURIComponent(id);
     }
     a.append(img,copy); return a;
+  }
+  async function renderProfileSwitcher() {
+    const profile=$('#accountProfile'); if(!profile)return;
+    let host=$('#kfProfileSwitcher');
+    if(!host){host=document.createElement('section');host.id='kfProfileSwitcher';host.className='account-library-section';host.innerHTML='<span class="account-overline">КТО СМОТРИТ?</span><h2>Профили просмотра</h2><div class="kf-profile-controls"><select id="kfProfileSelect" aria-label="Выбрать профиль"></select><input id="kfProfileName" maxlength="24" minlength="2" placeholder="Имя нового профиля"><button id="kfCreateProfile" type="button" class="account-primary-button">Добавить профиль</button></div><p id="kfProfileMessage" class="account-message" role="status"></p>';profile.insertBefore(host,profile.querySelector('.account-library-section'));}
+    const sb=await getSupabase();const {data:{user},error:userError}=await sb.auth.getUser();if(userError)throw userError;if(!user)return;
+    await resolveProfile(sb,user);
+    const {data,error}=await sb.from('kf_profiles').select('id,name,is_default').eq('user_id',user.id).order('created_at',{ascending:true});
+    if(error)throw error;
+    const select=$('#kfProfileSelect');select.replaceChildren();
+    (data||[]).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name+(p.is_default?' · основной':'');select.append(o);});
+    select.value=activeProfileId;
+    select.onchange=()=>{activeProfileId=select.value;localStorage.setItem('kf-active-profile',activeProfileId);renderAccount();};
+    $('#kfCreateProfile').onclick=async()=>{const name=$('#kfProfileName').value.trim();if(name.length<2||name.length>24){$('#kfProfileMessage').textContent='Имя профиля должно содержать 2–24 символа.';return;}const {data:created,error:createError}=await sb.from('kf_profiles').insert({user_id:user.id,name,is_default:false}).select('id').single();if(createError){$('#kfProfileMessage').textContent=createError.message;return;}activeProfileId=created.id;localStorage.setItem('kf-active-profile',activeProfileId);$('#kfProfileMessage').textContent='Профиль создан.';renderAccount();};
+    $('#kfProfileMessage').textContent='У каждого профиля своё избранное и продолжение просмотра. До 5 профилей.';
   }
   function formatTime(value){ const s=Math.floor(value||0); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
   async function renderAccount() {
@@ -242,6 +298,7 @@
     const continueButton=$('#continueLast');
     continueButton.hidden=true;
     $('#favoriteList').replaceChildren(); $('#progressList').replaceChildren();
+    try{await renderProfileSwitcher();}catch(profileError){console.warn('KF profiles are not ready:',profileError);}
     try {
       const lib=await api('/api/library');
       const favorites=lib.favorites||[], progress=lib.progress||{};
@@ -369,7 +426,7 @@
     window.addEventListener('pagehide',()=>saveProgress(true));
     window.addEventListener('beforeunload',()=>saveProgress(true));
   }
-  fetch('/api/catalog',{cache:'no-store'}).then(r=>r.ok?r.json():{items:[]}).then(data=>{
+  fetch(window.KF_SUPABASE_URL+'/functions/v1/kf-admin/public/catalog',{headers:{apikey:window.KF_SUPABASE_PUBLISHABLE_KEY},cache:'no-store'}).then(r=>r.ok?r.json():{items:[]}).then(data=>{
     (data.items||[]).forEach(item=>{
       knownItems[item.id]={title:item.title,url:'detail.html?id='+encodeURIComponent(item.id),image:item.poster||'assets/zona-0.jpg',kind:item.kind==='series'?'СЕРИАЛ':'ФИЛЬМ',video:item.video,videoTitle:item.videoTitle||item.title};
     });

@@ -51,7 +51,7 @@
   const castToText = cast => (Array.isArray(cast) ? cast : []).map(x => (x[0] || '') + ': ' + (x[1] || '')).join('\n');
   function editItem(item) {
     $('contentId').value=item.id; $('contentTitle').value=item.title||''; $('contentKind').value=item.kind||'movie';
-    $('contentYear').value=item.year||''; $('contentGenre').value=item.genre||''; $('contentDescription').value=item.description||'';
+    $('contentYear').value=item.year||''; $('contentReleaseAt').value=item.releaseAt?new Date(item.releaseAt).toISOString().slice(0,16):''; $('contentGenre').value=item.genre||''; $('contentDescription').value=item.description||'';
     $('contentPoster').value=item.poster||''; $('contentVideo').value=item.video||''; $('contentVideoTitle').value=item.videoTitle||'';
     $('contentTrailer').value=item.trailer||''; $('contentCast').value=castToText(item.cast);
     $('formHeading').textContent='Редактировать: '+item.title; $('saveContent').textContent='Сохранить изменения'; message('formMessage','');
@@ -100,7 +100,7 @@
   form.addEventListener('submit',async e=>{
     e.preventDefault();message('formMessage','Сохраняем публикацию…');const id=$('contentId').value;
     const cast=$('contentCast').value.split(/\r?\n/).map(line=>{const i=line.indexOf(':');return i<0?['Съёмочная группа',line.trim()]:[line.slice(0,i).trim(),line.slice(i+1).trim()];}).filter(x=>x[1]);
-    const payload={title:$('contentTitle').value.trim(),kind:$('contentKind').value,year:$('contentYear').value.trim(),genre:$('contentGenre').value.trim(),description:$('contentDescription').value.trim(),poster:$('contentPoster').value.trim(),video:$('contentVideo').value.trim(),videoTitle:$('contentVideoTitle').value.trim(),trailer:$('contentTrailer').value.trim(),cast};
+    const payload={title:$('contentTitle').value.trim(),kind:$('contentKind').value,year:$('contentYear').value.trim(),releaseAt:$('contentReleaseAt').value?new Date($('contentReleaseAt').value).toISOString():'',genre:$('contentGenre').value.trim(),description:$('contentDescription').value.trim(),poster:$('contentPoster').value.trim(),video:$('contentVideo').value.trim(),videoTitle:$('contentVideoTitle').value.trim(),trailer:$('contentTrailer').value.trim(),cast};
     try{const out=await api(id?'/catalog/'+encodeURIComponent(id):'/catalog',{method:id?'PUT':'POST',body:payload});message('formMessage',out.message||'Сохранено.');reset();await loadItems();}
     catch(err){message('formMessage',err.message);}
   });

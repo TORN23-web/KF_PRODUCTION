@@ -127,6 +127,7 @@ function validateItem(input: any) {
     title: input.title.trim().slice(0, 160),
     kind: input.kind === "series" ? "series" : "movie",
     year: String(input.year || "").slice(0, 4),
+    releaseAt: typeof input.releaseAt === "string" && !Number.isNaN(Date.parse(input.releaseAt)) ? new Date(input.releaseAt).toISOString() : "",
     genre: String(input.genre || "").slice(0, 100),
     description: String(input.description || "").slice(0, 4000),
     poster: String(input.poster || "").slice(0, 1000),
