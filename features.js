@@ -42,7 +42,9 @@
     const main=$('main');if(!main||$('#kfPersonalRecommendations'))return;
     try{
       const response=await fetch(window.KF_SUPABASE_URL+'/functions/v1/kf-admin/public/catalog',{headers:{apikey:window.KF_SUPABASE_PUBLISHABLE_KEY},cache:'no-store'});if(!response.ok)return;
-      const items=(await response.json()).items||[];const movies=items.filter(x=>x.id&&x.title);
+      const items=(await response.json()).items||[];
+      // Публичный каталог иногда возвращает повторные записи; в рекомендациях каждый фильм должен быть один раз.
+      const movies=[...new Map(items.filter(x=>x&&x.id&&x.title).map(x=>[String(x.id),x])).values()];
       if(!movies.length)movies.push({id:'zona0',title:'ЗОНА 0',kind:'series',genre:'Триллер / фантастика',poster:'assets/zona-0.jpg'});
       const {c,user}=await current();let favoriteIds=[];
       if(user){const {data}=await c.from('favorites').select('film_id').eq('user_id',user.id);favoriteIds=(data||[]).map(x=>x.film_id);}
