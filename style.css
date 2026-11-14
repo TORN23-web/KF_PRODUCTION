@@ -1394,3 +1394,9 @@ html body .okko-footer .brand > img.brand-logo {
     font-size: 10px;
   }
 }
+
+
+/* Ensure catalog filters can hide cards despite display styles. */
+.okko-movie-card[hidden] {
+  display: none !important;
+}
