@@ -318,18 +318,53 @@
   }
   const player=$('#movie-player');
   if(player) {
-    const params=new URLSearchParams(location.search); const id=params.get('id')||'zona0';
-    let lastSent=0;
+    const params=new URLSearchParams(location.search);
+    const id=params.get('id')||'zona0';
+    let lastSent=0, restored=false, pendingSave=false;
     const saveProgress=async(force=false)=>{
       if(!currentUser || !Number.isFinite(player.duration)||player.duration<=0) return;
-      const now=Date.now(); if(!force && now-lastSent<10000)return; lastSent=now;
-      try{await api('/api/progress',{method:'POST',body:JSON.stringify({id,time:player.currentTime||0,duration:player.duration,title:params.get('title')||'Просмотр',kind:params.get('kind')==='series'?'series':'movie'})});}catch{}
+      const now=Date.now(); if(!force && now-lastSent<8000)return; lastSent=now;
+      try {
+        await api('/api/progress',{method:'POST',body:JSON.stringify({
+          id,time:player.ended?0:(player.currentTime||0),duration:player.duration,
+          title:params.get('title')||'Просмотр',
+          kind:params.get('kind')==='series'?'series':'movie'
+        })});
+      } catch(error) { console.warn('KF Production: прогресс не сохранён:',error); }
     };
+    const restoreProgress=async()=>{
+      if(restored || !currentUser || !Number.isFinite(player.duration) || player.duration<=0) return;
+      restored=true;
+      try {
+        const lib=await api('/api/library');
+        const saved=lib.progress && lib.progress[id];
+        if(!saved || !Number.isFinite(Number(saved.time))) return;
+        const position=Math.max(0,Number(saved.time));
+        // Не перематываем в самый конец и не восстанавливаем уже завершённый просмотр.
+        if(position>5 && position<player.duration-5) {
+          player.currentTime=position;
+          updateTimeFromRestore();
+          const resumeNotice=document.createElement('div');
+          resumeNotice.textContent='Продолжаем с '+formatTime(position);
+          resumeNotice.style.cssText='position:absolute;left:50%;top:18px;transform:translateX(-50%);z-index:8;padding:9px 14px;background:#111d;color:#fff;border:1px solid #ffffff35;border-radius:8px;font-size:13px;pointer-events:none';
+          const shell=$('#video-shell'); if(shell){shell.appendChild(resumeNotice);setTimeout(()=>resumeNotice.remove(),3500);}
+        }
+      } catch(error) { console.warn('KF Production: позиция просмотра не восстановлена:',error); }
+    };
+    function updateTimeFromRestore(){
+      const duration=player.duration;
+      const seek=$('#seek-bar'),now=$('#current-time'),total=$('#duration-time');
+      if(now) now.textContent=formatTime(player.currentTime);
+      if(total) total.textContent=formatTime(duration);
+      if(seek){seek.value=String(Math.round(player.currentTime/duration*1000));seek.style.setProperty('--seek-progress',seek.value/10+'%');}
+    }
+    player.addEventListener('loadedmetadata',restoreProgress,{once:true});
     player.addEventListener('timeupdate',()=>saveProgress(false));
     player.addEventListener('pause',()=>saveProgress(true));
     player.addEventListener('ended',()=>saveProgress(true));
     document.addEventListener('visibilitychange',()=>{if(document.hidden)saveProgress(true);});
     window.addEventListener('pagehide',()=>saveProgress(true));
+    window.addEventListener('beforeunload',()=>saveProgress(true));
   }
   fetch('/api/catalog',{cache:'no-store'}).then(r=>r.ok?r.json():{items:[]}).then(data=>{
     (data.items||[]).forEach(item=>{
