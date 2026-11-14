@@ -121,7 +121,9 @@
       if(r.ok){const data=await r.json();allItems=(data.items||[]).filter(x=>x&&x.id&&x.title);items=allItems;}
     }catch(e){console.warn('Каталог KF Production недоступен:',e);}
     const seriesSection=$('.series-row'),seriesRow=seriesSection?.querySelector('.okko-movie-row');
-    const zona=allItems.find(x=>x.id==='zona0')||{id:'zona0',title:'ЗОНА 0',kind:'series',year:'2026',genre:'Триллер, Фантастика',cast:['Кашма','Даня28k'],poster:'assets/зона 0 картинка 2.jpg',video:'films/zona-0-episode1.mp4',description:'Первый эпизод сериала «ЗОНА 0».'};
+    const zona=allItems.find(x=>x.id==='zona0')||{id:'zona0',title:'ЗОНА 0',kind:'series',year:'2026',genre:'Триллер, Фантастика',cast:['Кашма','Даня28k'],poster:'assets/зона 0 картинка 1.png',video:'films/zona-0-episode1.mp4',description:'Первый эпизод сериала «ЗОНА 0».'};
+    // Для вертикальной карточки сериала используем утверждённый постер с рабочего стола.
+    if(zona)zona.poster='assets/зона 0 картинка 1.png';
     // Если публичный каталог Supabase пуст, не оставляем сайт без карточек:
     // используем существующую запись ЗОНА 0 как реальный элемент для обеих подборок.
     if(!allItems.some(x=>x.id==='zona0')){allItems.push(zona);items.push(zona);}
