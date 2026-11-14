@@ -38,9 +38,9 @@
     [...genres.values()].sort((a,b)=>a.localeCompare(b,'ru')).forEach(g=>{const o=document.createElement('option');o.value=g.toLocaleLowerCase('ru');o.textContent=g;$('#catalogGenre').append(o);});
     [...years].sort((a,b)=>Number(b)-Number(a)).forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;$('#catalogYear').append(o);});
     const search=$('#catalogSearch'),kind=$('#catalogKind'),genre=$('#catalogGenre'),year=$('#catalogYear'),sort=$('#catalogSort');
-    const normalize=value=>String(value||'').normalize('NFKC').toLocaleLowerCase('ru').replace(/\s+/g,' ').trim();
+    const normalize=value=>String(value||'').normalize('NFKC').toLocaleLowerCase('ru').replace(/ё/g,'е').replace(/\s+/g,' ').trim();
     const apply=()=>{
-      const q=normalize(search.value);
+      const queryParts=normalize(search.value).split(' ').filter(Boolean);
       const selectedKind=kind.value;
       const selectedGenre=normalize(genre.value);
       const selectedYear=year.value;
@@ -48,10 +48,11 @@
       cards.forEach(a=>{
         const title=normalize(a.dataset.title||a.querySelector('.okko-poster b')?.textContent);
         const genres=normalize(a.dataset.genre).split(/[,;/|]+/).map(v=>v.trim()).filter(Boolean);
-        const hay=normalize([title,a.dataset.genre,a.dataset.cast,a.textContent].join(' '));
+        const hay=normalize([title,a.dataset.genre,a.dataset.cast,a.innerText||a.textContent].join(' '));
         const cardKind=a.dataset.kind||(a.closest('.series-row')?'series':'movie');
         const cardYear=String(a.dataset.year||'');
-        const matches=(!q||hay.includes(q))
+        const textMatches=queryParts.every(part=>hay.includes(part));
+        const matches=textMatches
           &&(!selectedKind||cardKind===selectedKind)
           &&(!selectedGenre||genres.some(v=>v===selectedGenre||v.includes(selectedGenre)||selectedGenre.includes(v)))
           &&(!selectedYear||cardYear===selectedYear);
@@ -67,6 +68,8 @@
       });
     };
     search.addEventListener('input',apply);
+    search.addEventListener('search',apply);
+    search.addEventListener('keyup',apply);
     [kind,genre,year,sort].forEach(el=>el.addEventListener('change',apply));
     apply();
   }
