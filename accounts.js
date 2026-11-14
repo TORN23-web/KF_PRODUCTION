@@ -322,8 +322,31 @@
     $('#kfProfileMessage').textContent='Избранное и продолжение просмотра разделены между профилями.';
   }
   function formatTime(value){ const s=Math.floor(value||0); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+  function removeDuplicateAccountSections(profile) {
+    if (!profile) return;
+    const seen = new Set();
+    profile.querySelectorAll('.account-library-section').forEach(section => {
+      const heading = section.querySelector('h2');
+      const title = (heading?.textContent || '').trim().toLocaleLowerCase('ru');
+      if (!title) return;
+      if (title === 'продолжить просмотр' || title === 'избранное') {
+        if (seen.has(title)) section.remove();
+        else seen.add(title);
+      }
+    });
+    const progress = $('#progressList', profile), favorites = $('#favoriteList', profile);
+    [progress, favorites].forEach(list => {
+      if (!list) return;
+      const cards = new Set();
+      Array.from(list.children).forEach(card => {
+        const key = card.getAttribute('href') || card.textContent.trim();
+        if (cards.has(key)) card.remove(); else cards.add(key);
+      });
+    });
+  }
   async function renderAccount() {
     const auth=$('#accountAuth'), profile=$('#accountProfile'); if(!auth||!profile) return;
+    removeDuplicateAccountSections(profile);
     auth.hidden=!!currentUser; profile.hidden=!currentUser;
     if(!currentUser) return;
     $('#accountEmail').textContent=currentUser.email;
@@ -336,9 +359,10 @@
     continueButton.hidden=true;
     $('#favoriteList').replaceChildren(); $('#progressList').replaceChildren();
     try{await renderProfileSwitcher();}catch(profileError){console.warn('KF profiles are not ready:',profileError);}
+    removeDuplicateAccountSections(profile);
     try {
       const lib=await api('/api/library');
-      const favorites=lib.favorites||[], progress=lib.progress||{};
+      const favorites=[...new Set(lib.favorites||[])], progress=lib.progress||{};
       favorites.forEach(id=>{const card=itemCard(id,'ИЗБРАННОЕ');if(card)$('#favoriteList').append(card);});
       Object.values(progress).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).forEach(p=>{const card=itemCard(p.id,'ПРОДОЛЖИТЬ ПРОСМОТР',p);if(card)$('#progressList').append(card);});
       $('#favoritesEmpty').hidden=favorites.length>0;
