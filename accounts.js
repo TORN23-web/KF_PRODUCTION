@@ -272,17 +272,54 @@
   async function renderProfileSwitcher() {
     const profile=$('#accountProfile'); if(!profile)return;
     let host=$('#kfProfileSwitcher');
-    if(!host){host=document.createElement('section');host.id='kfProfileSwitcher';host.className='account-library-section';host.innerHTML='<span class="account-overline">КТО СМОТРИТ?</span><h2>Профили просмотра</h2><div class="kf-profile-controls"><select id="kfProfileSelect" aria-label="Выбрать профиль"></select><input id="kfProfileName" maxlength="24" minlength="2" placeholder="Имя нового профиля"><button id="kfCreateProfile" type="button" class="account-primary-button">Добавить профиль</button></div><p id="kfProfileMessage" class="account-message" role="status"></p>';profile.insertBefore(host,profile.querySelector('.account-library-section'));}
+    if(!host){
+      host=document.createElement('section');host.id='kfProfileSwitcher';host.className='account-library-section kf-family-panel';
+      host.innerHTML='<span class="account-overline">KF FAMILY</span><h2>Семейные профили</h2><p class="kf-family-intro">Создай отдельный профиль для каждого члена семьи. У каждого будут свои избранное и продолжение просмотра.</p><div class="kf-family-current"><span class="kf-family-avatar" id="kfProfileAvatar">👤</span><div><small>СЕЙЧАС СМОТРИТ</small><b id="kfProfileCurrentName">Основной</b></div></div><div class="kf-profile-controls"><label class="kf-profile-field"><span>Выбрать профиль</span><select id="kfProfileSelect" aria-label="Выбрать профиль"></select></label><label class="kf-profile-field"><span>Имя профиля</span><input id="kfProfileName" maxlength="24" minlength="2" placeholder="Например, Мама"></label><label class="kf-profile-field"><span>Аватар</span><select id="kfProfileAvatarChoice" aria-label="Аватар профиля"><option value="👤">👤 Человек</option><option value="🧒">🧒 Ребёнок</option><option value="👩">👩 Женщина</option><option value="👨">👨 Мужчина</option><option value="🧑">🧑 Подросток</option><option value="🐱">🐱 Кот</option><option value="🐼">🐼 Панда</option><option value="🦊">🦊 Лиса</option><option value="🤖">🤖 Робот</option><option value="⭐">⭐ Звезда</option></select></label><div class="kf-family-actions"><button id="kfSaveProfile" type="button" class="account-primary-button">Сохранить профиль</button><button id="kfDeleteProfile" type="button" class="account-logout">Удалить профиль</button></div><div class="kf-family-create"><label class="kf-profile-field"><span>Новый профиль</span><input id="kfNewProfileName" maxlength="24" minlength="2" placeholder="Имя нового профиля"></label><button id="kfCreateProfile" type="button" class="account-primary-button">＋ Добавить</button></div></div><p id="kfProfileMessage" class="account-message" role="status"></p><small class="kf-family-limit">Можно создать до 5 профилей на один аккаунт.</small>';
+      profile.insertBefore(host,profile.querySelector('.account-library-section'));
+    }
     const sb=await getSupabase();const {data:{user},error:userError}=await sb.auth.getUser();if(userError)throw userError;if(!user)return;
     await resolveProfile(sb,user);
-    const {data,error}=await sb.from('kf_profiles').select('id,name,is_default').eq('user_id',user.id).order('created_at',{ascending:true});
+    const {data,error}=await sb.from('kf_profiles').select('id,name,is_default,avatar_url').eq('user_id',user.id).order('created_at',{ascending:true});
     if(error)throw error;
+    const profiles=data||[], active=profiles.find(p=>p.id===activeProfileId)||profiles.find(p=>p.is_default)||profiles[0];
+    if(!active)return;
+    activeProfileId=active.id;localStorage.setItem('kf-active-profile',activeProfileId);
     const select=$('#kfProfileSelect');select.replaceChildren();
-    (data||[]).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name+(p.is_default?' · основной':'');select.append(o);});
+    profiles.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name+(p.is_default?' · основной':'');select.append(o);});
     select.value=activeProfileId;
+    $('#kfProfileCurrentName').textContent=active.name;
+    $('#kfProfileAvatar').textContent=active.avatar_url||'👤';
+    $('#kfProfileName').value=active.name;
+    $('#kfProfileAvatarChoice').value=active.avatar_url||'👤';
+    $('#kfDeleteProfile').disabled=!!active.is_default;
+    $('#kfCreateProfile').disabled=profiles.length>=5;
     select.onchange=()=>{activeProfileId=select.value;localStorage.setItem('kf-active-profile',activeProfileId);renderAccount();};
-    $('#kfCreateProfile').onclick=async()=>{const name=$('#kfProfileName').value.trim();if(name.length<2||name.length>24){$('#kfProfileMessage').textContent='Имя профиля должно содержать 2–24 символа.';return;}const {data:created,error:createError}=await sb.from('kf_profiles').insert({user_id:user.id,name,is_default:false}).select('id').single();if(createError){$('#kfProfileMessage').textContent=createError.message;return;}activeProfileId=created.id;localStorage.setItem('kf-active-profile',activeProfileId);$('#kfProfileMessage').textContent='Профиль создан.';renderAccount();};
-    $('#kfProfileMessage').textContent='У каждого профиля своё избранное и продолжение просмотра. До 5 профилей.';
+    $('#kfCreateProfile').onclick=async()=>{
+      const name=$('#kfNewProfileName').value.trim(),msg=$('#kfProfileMessage');
+      if(name.length<2||name.length>24){msg.textContent='Имя профиля должно содержать 2–24 символа.';return;}
+      if(profiles.length>=5){msg.textContent='Достигнут лимит: 5 профилей.';return;}
+      const {data:created,error:createError}=await sb.from('kf_profiles').insert({user_id:user.id,name,is_default:false,avatar_url:'👤'}).select('id').single();
+      if(createError){msg.textContent=createError.message.includes('не более 5')?'Можно создать не более 5 профилей.':createError.message;return;}
+      activeProfileId=created.id;localStorage.setItem('kf-active-profile',activeProfileId);msg.textContent='Семейный профиль создан.';renderAccount();
+    };
+    $('#kfSaveProfile').onclick=async()=>{
+      const name=$('#kfProfileName').value.trim(),avatar_url=$('#kfProfileAvatarChoice').value;
+      const msg=$('#kfProfileMessage');
+      if(name.length<2||name.length>24){msg.textContent='Имя должно содержать 2–24 символа.';return;}
+      const {error:updateError}=await sb.from('kf_profiles').update({name,avatar_url}).eq('id',active.id).eq('user_id',user.id);
+      if(updateError){msg.textContent=updateError.message;return;}
+      msg.textContent='Профиль сохранён.';renderAccount();
+    };
+    $('#kfDeleteProfile').onclick=async()=>{
+      if(active.is_default){$('#kfProfileMessage').textContent='Основной профиль удалить нельзя.';return;}
+      if(!confirm('Удалить профиль «'+active.name+'»? Его избранное и история просмотра тоже будут удалены.'))return;
+      const fallback=profiles.find(p=>p.is_default)||profiles.find(p=>p.id!==active.id);
+      const {error:deleteError}=await sb.from('kf_profiles').delete().eq('id',active.id).eq('user_id',user.id);
+      if(deleteError){$('#kfProfileMessage').textContent=deleteError.message;return;}
+      activeProfileId=fallback?.id||'';if(activeProfileId)localStorage.setItem('kf-active-profile',activeProfileId);else localStorage.removeItem('kf-active-profile');
+      renderAccount();
+    };
+    $('#kfProfileMessage').textContent='Избранное и продолжение просмотра разделены между профилями.';
   }
   function formatTime(value){ const s=Math.floor(value||0); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
   async function renderAccount() {
