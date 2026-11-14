@@ -13,7 +13,8 @@
     a.dataset.cast=cast.map(x=>Array.isArray(x)?x.join(' '):String(x||'')).join(' ').toLocaleLowerCase('ru');
     const poster=document.createElement('div');poster.className='okko-poster okko-poster-three';
     if(item.id==='zona0')poster.classList.add('zona0-poster');
-    const image=safeUrl(item.poster);if(image)poster.style.backgroundImage='url("'+image+'")';
+    const posterSource=item.id==='zona0'?'assets/зона 0 картинка 1.png':item.poster;
+    const image=safeUrl(posterSource);if(image)poster.style.backgroundImage='url("'+image+'")';
     poster.style.backgroundSize=item.id==='zona0'?'contain':'cover';poster.style.backgroundPosition='center';poster.style.backgroundRepeat='no-repeat';
     const kicker=document.createElement('span');kicker.className='okko-poster-kicker';kicker.textContent=item.kind==='series'?'KF SERIES':'KF ORIGINALS';
     const title=document.createElement('b');title.textContent=item.title||'Без названия';
@@ -107,7 +108,7 @@
     const hero=$('#recommendedHero'),art=$('#recommendedArt'),title=$('#recommendedTitle'),desc=$('#recommendedDescription'),watch=$('#recommendedWatch'),number=$('#recommendedNumber'),dotsHost=$('#recommendedDots');
     if(!hero||!art||!title||!watch||!dotsHost)return;
     const slides=candidates.slice(0,8);let index=0,timer=null;dotsHost.replaceChildren();
-    const show=i=>{index=(i+slides.length)%slides.length;const x=slides[index];title.textContent=x.title;desc.textContent=x.description||'Оригинальный проект KF Production.';watch.href='detail.html?id='+encodeURIComponent(x.id);watch.innerHTML='<span>▶</span> '+(x.kind==='series'?'Смотреть':'Смотреть фильм');number.textContent=String(index+1).padStart(2,'0');const poster=safeUrl(x.poster);if(poster)art.style.backgroundImage='linear-gradient(90deg,rgba(8,9,13,.96) 0%,rgba(8,9,13,.55) 45%,rgba(8,9,13,.08) 100%),url("'+poster+'")';[...dotsHost.children].forEach((b,j)=>{b.classList.toggle('selected',j===index);b.setAttribute('aria-current',j===index?'true':'false');});};
+    const show=i=>{index=(i+slides.length)%slides.length;const x=slides[index];title.textContent=x.title;desc.textContent=x.description||'Оригинальный проект KF Production.';watch.href='detail.html?id='+encodeURIComponent(x.id);watch.innerHTML='<span>▶</span> '+(x.kind==='series'?'Смотреть':'Смотреть фильм');number.textContent=String(index+1).padStart(2,'0');const poster=safeUrl(x.poster);if(poster){art.style.backgroundImage='linear-gradient(90deg,rgba(8,9,13,.96) 0%,rgba(8,9,13,.55) 45%,rgba(8,9,13,.08) 100%),url("'+poster+'")';art.style.backgroundSize='cover';art.style.backgroundPosition='center';art.style.backgroundRepeat='no-repeat';}[...dotsHost.children].forEach((b,j)=>{b.classList.toggle('selected',j===index);b.setAttribute('aria-current',j===index?'true':'false');});};
     slides.forEach((x,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-label','Рекомендация '+(i+1));b.addEventListener('click',()=>show(i));dotsHost.append(b);});
     const prev=$('#recommendedPrev'),next=$('#recommendedNext');
     if(slides.length>1){prev.hidden=false;next.hidden=false;prev.onclick=()=>show(index-1);next.onclick=()=>show(index+1);timer=setInterval(()=>show(index+1),5000);}else{prev.hidden=true;next.hidden=true;}
@@ -121,9 +122,9 @@
       if(r.ok){const data=await r.json();allItems=(data.items||[]).filter(x=>x&&x.id&&x.title);items=allItems;}
     }catch(e){console.warn('Каталог KF Production недоступен:',e);}
     const seriesSection=$('.series-row'),seriesRow=seriesSection?.querySelector('.okko-movie-row');
-    const zona=allItems.find(x=>x.id==='zona0')||{id:'zona0',title:'ЗОНА 0',kind:'series',year:'2026',genre:'Триллер, Фантастика',cast:['Кашма','Даня28k'],poster:'assets/зона 0 картинка 1.png',video:'films/zona-0-episode1.mp4',description:'Первый эпизод сериала «ЗОНА 0».'};
-    // Для вертикальной карточки сериала используем утверждённый постер с рабочего стола.
-    if(zona)zona.poster='assets/зона 0 картинка 1.png';
+    const zona=allItems.find(x=>x.id==='zona0')||{id:'zona0',title:'ЗОНА 0',kind:'series',year:'2026',genre:'Триллер, Фантастика',cast:['Кашма','Даня28k'],poster:'assets/зона 0 картинка 2.png',video:'films/zona-0-episode1.mp4',description:'Первый эпизод сериала «ЗОНА 0».'};
+    // Широкая версия постера используется в рекомендациях; вертикальная задаётся отдельно в card().
+    if(zona)zona.poster='assets/зона 0 картинка 2.png';
     // Если публичный каталог Supabase пуст, не оставляем сайт без карточек:
     // используем существующую запись ЗОНА 0 как реальный элемент для обеих подборок.
     if(!allItems.some(x=>x.id==='zona0')){allItems.push(zona);items.push(zona);}
