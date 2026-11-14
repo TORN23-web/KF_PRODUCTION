@@ -358,7 +358,10 @@
       if(total) total.textContent=formatTime(duration);
       if(seek){seek.value=String(Math.round(player.currentTime/duration*1000));seek.style.setProperty('--seek-progress',seek.value/10+'%');}
     }
-    player.addEventListener('loadedmetadata',restoreProgress,{once:true});
+    // Metadata can load before Supabase restores the saved login session.
+    // Retry restoration after authentication is ready as well as after metadata.
+    player.addEventListener('loadedmetadata',restoreProgress);
+    player.addEventListener('kf-auth-ready',restoreProgress);
     player.addEventListener('timeupdate',()=>saveProgress(false));
     player.addEventListener('pause',()=>saveProgress(true));
     player.addEventListener('ended',()=>saveProgress(true));
@@ -372,5 +375,8 @@
     });
     if(accountPage&&currentUser) renderAccount();
   }).catch(()=>{});
-  refreshUser();
+  refreshUser().then(()=>{
+    const activePlayer=$('#movie-player');
+    if(activePlayer) activePlayer.dispatchEvent(new Event('kf-auth-ready'));
+  });
 })();
