@@ -107,7 +107,10 @@
     const candidates=items.filter(x=>x.id&&x.title&&x.video);if(!candidates.length)return;
     const hero=$('#recommendedHero'),art=$('#recommendedArt'),title=$('#recommendedTitle'),desc=$('#recommendedDescription'),watch=$('#recommendedWatch'),number=$('#recommendedNumber'),dotsHost=$('#recommendedDots');
     if(!hero||!art||!title||!watch||!dotsHost)return;
-    const slides=candidates.slice(0,8);let index=0,timer=null;dotsHost.replaceChildren();
+    // Один и тот же ролик может прийти из каталога несколькими записями с разными ID.
+    // Для широкого слайдера считаем повтором одинаковый video URL (или ID, если видео нет).
+    const uniqueSlides=[...new Map(candidates.map(x=>{const identity=String(x.video||x.id||'').trim().toLocaleLowerCase('ru');return [identity,x];})).values()];
+    const slides=uniqueSlides.slice(0,8);let index=0,timer=null;dotsHost.replaceChildren();
     const show=i=>{index=(i+slides.length)%slides.length;const x=slides[index];title.textContent=x.title;desc.textContent=x.description||'Оригинальный проект KF Production.';watch.href='detail.html?id='+encodeURIComponent(x.id);watch.innerHTML='<span>▶</span> '+(x.kind==='series'?'Смотреть':'Смотреть фильм');number.textContent=String(index+1).padStart(2,'0');const poster=safeUrl(x.poster);if(poster){art.style.backgroundImage='linear-gradient(90deg,rgba(8,9,13,.96) 0%,rgba(8,9,13,.55) 45%,rgba(8,9,13,.08) 100%),url("'+poster+'")';art.style.backgroundSize='cover';art.style.backgroundPosition='center';art.style.backgroundRepeat='no-repeat';}[...dotsHost.children].forEach((b,j)=>{b.classList.toggle('selected',j===index);b.setAttribute('aria-current',j===index?'true':'false');});};
     slides.forEach((x,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-label','Рекомендация '+(i+1));b.addEventListener('click',()=>show(i));dotsHost.append(b);});
     const prev=$('#recommendedPrev'),next=$('#recommendedNext');
