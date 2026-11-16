@@ -368,7 +368,10 @@
       });
     });
   }
+  let accountRenderVersion = 0;
   async function renderAccount() {
+    const renderVersion = ++accountRenderVersion;
+    const renderUserId = currentUser?.id || null;
     const auth=$('#accountAuth'), profile=$('#accountProfile'); if(!auth||!profile) return;
     removeDuplicateAccountSections(profile);
     auth.hidden=!!currentUser; profile.hidden=!currentUser;
@@ -383,15 +386,21 @@
     continueButton.hidden=true;
     $('#favoriteList').replaceChildren(); $('#progressList').replaceChildren();
     try{await renderProfileSwitcher();}catch(profileError){console.warn('KF profiles are not ready:',profileError);}
+    if (renderVersion !== accountRenderVersion || currentUser?.id !== renderUserId) return;
     removeDuplicateAccountSections(profile);
     try {
       const lib=await api('/api/library');
+      if (renderVersion !== accountRenderVersion || currentUser?.id !== renderUserId) return;
+      const favoriteList=$('#favoriteList'), progressList=$('#progressList');
+      favoriteList.replaceChildren(); progressList.replaceChildren();
       const favorites=[...new Set(lib.favorites||[])], progress=lib.progress||{};
-      favorites.forEach(id=>{const card=itemCard(id,'ИЗБРАННОЕ');if(card)$('#favoriteList').append(card);});
-      Object.values(progress).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).forEach(p=>{const card=itemCard(p.id,'ПРОДОЛЖИТЬ ПРОСМОТР',p);if(card)$('#progressList').append(card);});
+      favorites.forEach(id=>{const card=itemCard(id,'ИЗБРАННОЕ');if(card)favoriteList.append(card);});
+      const progressItems=[...new Map(Object.values(progress).filter(p=>p&&p.id).map(p=>[String(p.id),p])).values()];
+      progressItems.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).forEach(p=>{const card=itemCard(p.id,'ПРОДОЛЖИТЬ ПРОСМОТР',p);if(card)progressList.append(card);});
       $('#favoritesEmpty').hidden=favorites.length>0;
-      $('#progressEmpty').hidden=Object.keys(progress).length>0;
-    } catch(e) { $('#accountMessage').textContent=e.message; }
+      $('#progressEmpty').hidden=progressItems.length>0;
+      removeDuplicateAccountSections(profile);
+    } catch(e) { if (renderVersion === accountRenderVersion) $('#accountMessage').textContent=e.message; }
     if(next) continueButton.hidden=false;
     continueButton.onclick=()=>location.href=next||'index.html';
   }
