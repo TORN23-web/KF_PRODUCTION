@@ -56,63 +56,7 @@
   </main>
   <footer class="okko-footer"><a class="brand" href="index.html"><img class="brand-logo" src="assets/kf-production-logo.png?v=8" alt="KF Production" width="38" height="38" style="width:38px;height:38px;min-width:38px;max-width:38px;object-fit:cover;border-radius:6px;display:block;flex:0 0 38px;"></a><p>© 2026 KF Production</p></footer>
   <script src="script.js"></script>
-  <script>
-    (() => {
-      const slides = [
-        { title: 'ЗОНА<br><em>0</em>', description: 'Первый эпизод сериала «ЗОНА 0». Смотри первую серию на KF Production.', button: 'Смотреть 1 серию', href: 'detail.html?id=zona0', art: 'slide-three' }
-      ];
-      const art = document.getElementById('recommendedArt');
-      const content = document.querySelector('.recommended-hero .okko-hero-content');
-      const title = document.getElementById('recommendedTitle');
-      const description = document.getElementById('recommendedDescription');
-      const watch = document.getElementById('recommendedWatch');
-      const number = document.getElementById('recommendedNumber');
-      const dots = Array.from(document.querySelectorAll('#recommendedDots button'));
-      dots.slice(1).forEach(dot => dot.remove());
-      let current = 0;
-      let timer;
-      function showSlide(index, direction = 1) {
-        current = (index + slides.length) % slides.length;
-        const slide = slides[current];
-        content.classList.remove('slide-transition', 'swipe-from-left', 'swipe-from-right');
-        art.classList.remove('backdrop-transition', 'swipe-art-left', 'swipe-art-right');
-        // Анимация нужна только когда есть несколько рекомендаций.
-        if (slides.length > 1) {
-          void content.offsetWidth;
-          content.classList.add('slide-transition', direction < 0 ? 'swipe-from-left' : 'swipe-from-right');
-          art.classList.add('backdrop-transition', direction < 0 ? 'swipe-art-left' : 'swipe-art-right');
-        }
-        title.innerHTML = slide.title;
-        description.textContent = slide.description;
-        watch.href = slide.href;
-        watch.innerHTML = '<span>▶</span> ' + slide.button;
-        number.textContent = String(current + 1).padStart(2, '0');
-        art.classList.remove('slide-one', 'slide-two', 'slide-three');
-        art.classList.add(slide.art);
-        dots.forEach((dot, i) => {
-          dot.classList.toggle('selected', i === current);
-          dot.setAttribute('aria-current', i === current ? 'true' : 'false');
-        });
-      }
-      function restartTimer() {
-        clearInterval(timer);
-        timer = null;
-        if (slides.length < 2) return;
-        timer = setInterval(() => showSlide(current + 1, 1), 5000);
-      }
-      dots.forEach((dot, i) => dot.addEventListener('click', () => {
-        showSlide(i, i < current ? -1 : 1);
-        restartTimer();
-      }));
-      const hero = document.getElementById('recommendedHero');
-      document.getElementById('recommendedPrev').hidden = true;
-      document.getElementById('recommendedNext').hidden = true;
-      // Автопереключение не останавливается при наведении мыши.
-      showSlide(0);
-      restartTimer();
-    })();
-  </script>
 <script src="supabase-config.js"></script><script src="accounts.js?v=12"></script>
-<script src="catalog.js?v=10"></script><script src="features.js?v=3"></script>
+<script src="catalog.js?v=10"></script><script src="features.js?v=4"></script>
 </body>
 </html>
