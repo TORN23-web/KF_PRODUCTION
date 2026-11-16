@@ -36,7 +36,7 @@
           document.head.appendChild(script);
         });
       }
-      return window.supabase.createClient(window.KF_SUPABASE_URL, window.KF_SUPABASE_PUBLISHABLE_KEY, {
+      const client = window.supabase.createClient(window.KF_SUPABASE_URL, window.KF_SUPABASE_PUBLISHABLE_KEY, {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
@@ -45,6 +45,30 @@
           storageKey: 'kf-production-auth'
         }
       });
+      // Keep the interface synchronized with the session restored from localStorage
+      // after a reload or navigation between KF Production pages.
+      client.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          currentUser = {
+            id: session.user.id,
+            email: session.user.email,
+            avatar: currentUser?.id === session.user.id ? currentUser.avatar : null,
+            username: currentUser?.id === session.user.id
+              ? currentUser.username
+              : (session.user.email || '').split('@')[0]
+          };
+          makeHeaderLink(currentUser);
+          if (accountPage) renderAccount();
+          if ($('.detail-actions')) addFavoriteButton();
+          const activePlayer = $('#movie-player');
+          if (activePlayer) activePlayer.dispatchEvent(new Event('kf-auth-ready'));
+        } else if (event === 'SIGNED_OUT') {
+          currentUser = null;
+          makeHeaderLink(null);
+          if (accountPage) renderAccount();
+        }
+      });
+      return client;
     })();
     return supabaseClientPromise;
   };
