@@ -405,6 +405,14 @@
     continueButton.onclick=()=>location.href=next||'index.html';
   }
   if(accountPage) {
+    // Keep exactly one "Продолжить просмотр" and one "Избранное" section,
+    // even if another asynchronous page feature inserts duplicate blocks later.
+    const accountProfileRoot=$('#accountProfile');
+    if(accountProfileRoot){
+      const accountSectionsObserver=new MutationObserver(()=>removeDuplicateAccountSections(accountProfileRoot));
+      accountSectionsObserver.observe(accountProfileRoot,{childList:true,subtree:true});
+      removeDuplicateAccountSections(accountProfileRoot);
+    }
     const tabs=$$('.auth-tab'), form=$('#authForm'), submit=$('#authSubmit'), heading=$('#authHeading');
     let mode='login';
     const savedAccountsKey='kf-saved-account-emails';
