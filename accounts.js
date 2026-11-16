@@ -398,13 +398,43 @@
   if(accountPage) {
     const tabs=$$('.auth-tab'), form=$('#authForm'), submit=$('#authSubmit'), heading=$('#authHeading');
     let mode='login';
+    const savedAccountsKey='kf-saved-account-emails';
+    function readSavedAccounts(){
+      try { const value=JSON.parse(localStorage.getItem(savedAccountsKey)||'[]'); return Array.isArray(value)?value.filter(x=>typeof x==='string'&&x.includes('@')).slice(0,8):[]; }
+      catch { return []; }
+    }
+    function rememberAccount(email){
+      const normalized=String(email||'').trim().toLowerCase();
+      if(!normalized)return;
+      const next=[normalized,...readSavedAccounts().filter(x=>x!==normalized)].slice(0,8);
+      localStorage.setItem(savedAccountsKey,JSON.stringify(next));
+      renderSavedAccounts();
+    }
+    function renderSavedAccounts(){
+      const section=$('#kfSavedAccounts'), list=$('#kfSavedAccountsList');
+      if(!section||!list)return;
+      const emails=readSavedAccounts();
+      list.replaceChildren();
+      section.hidden=emails.length===0;
+      emails.forEach(email=>{
+        const row=document.createElement('div'); row.className='kf-saved-account-row';
+        const use=document.createElement('button'); use.type='button'; use.className='kf-saved-account-use'; use.textContent=email;
+        use.addEventListener('click',()=>{ $('#email').value=email; $('#password').focus(); });
+        const remove=document.createElement('button'); remove.type='button'; remove.className='kf-saved-account-remove'; remove.textContent='Убрать';
+        remove.setAttribute('aria-label','Убрать '+email+' из списка');
+        remove.addEventListener('click',()=>{ localStorage.setItem(savedAccountsKey,JSON.stringify(readSavedAccounts().filter(x=>x!==email))); renderSavedAccounts(); });
+        row.append(use,remove); list.append(row);
+      });
+    }
     function $$(s,root=document){return Array.from(root.querySelectorAll(s));}
+    renderSavedAccounts();
     tabs.forEach(tab=>tab.addEventListener('click',()=>{mode=tab.dataset.mode;tabs.forEach(t=>t.classList.toggle('active',t===tab));submit.textContent=mode==='register'?'Создать аккаунт':'Войти';heading.textContent=mode==='register'?'Создай аккаунт KF Production':'Вход в KF Production';$('#passwordHelp').hidden=mode!=='register';$('#authMessage').textContent='';}));
     form.addEventListener('submit',async e=>{
       e.preventDefault(); $('#authMessage').textContent='Проверяем данные…'; submit.disabled=true;
       try {
         const authResult = await api('/api/'+mode,{method:'POST',body:JSON.stringify({email:$('#email').value,password:$('#password').value})});
         if (mode === 'register' && authResult.pendingEmailConfirmation) {
+          rememberAccount($('#email').value);
           $('#authMessage').textContent='Аккаунт создан. Проверь почту и подтверди адрес, затем войди.';
           return;
         }
@@ -421,13 +451,29 @@
           if(!profileError) savedProfile=data;
         } catch {}
         currentUser={id:user.id,email:user.email,avatar:savedProfile?.avatar_url||null,username:savedProfile?.username||(user.email||'').split('@')[0]};
+        rememberAccount(user.email);
         makeHeaderLink(currentUser);
         $('#authMessage').textContent=''; renderAccount();
         await refreshAdminLink();
         const next=new URLSearchParams(location.search).get('next'); if(next) location.href=next;
       } catch(err){$('#authMessage').textContent=err.message;} finally {submit.disabled=false;}
     });
-    $('#logoutButton').addEventListener('click',async()=>{try{await api('/api/logout',{method:'POST',body:'{}'});currentUser=null;renderAccount();}catch(e){$('#accountMessage').textContent=e.message;}});
+    $('#logoutButton').addEventListener('click',async()=>{try{await api('/api/logout',{method:'POST',body:'{}'});currentUser=null;renderAccount();renderSavedAccounts();}catch(e){$('#accountMessage').textContent=e.message;}});
+    const addAccountButton=$('#kfAddAccountButton');
+    if(addAccountButton)addAccountButton.addEventListener('click',async()=>{
+      try{
+        await api('/api/logout',{method:'POST',body:'{}'});
+        currentUser=null;
+        renderAccount();
+        mode='register';
+        tabs.forEach(tab=>tab.classList.toggle('active',tab.dataset.mode==='register'));
+        submit.textContent='Создать аккаунт';
+        heading.textContent='Создай ещё один аккаунт KF Production';
+        $('#passwordHelp').hidden=false;
+        $('#authMessage').textContent='Введи другой адрес электронной почты и придумай пароль для нового аккаунта.';
+        renderSavedAccounts();
+      }catch(error){$('#accountMessage').textContent=error.message;}
+    });
     $('#usernameForm').addEventListener('submit',async e=>{
       e.preventDefault();
       const input=$('#accountUsername'), button=$('#usernameForm button[type="submit"]');
