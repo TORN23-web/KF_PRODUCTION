@@ -1403,9 +1403,3 @@ html body .okko-footer .brand > img.brand-logo {
 
 /* Постер ЗОНА 0: показываем исходное изображение полностью, без обрезки */
 .okko-poster.zona0-poster{background-size:contain!important;background-position:center!important;background-repeat:no-repeat!important;background-color:#000!important}
-
-/* ЗОНА 0 title artwork: show the original image whole, without cropping. */
-.detail-title-image-wrap{max-width:min(560px,58vw);width:100%;margin:16px 0 20px;letter-spacing:0;line-height:0}
-.detail-title-image{display:block;width:100%;height:auto;max-height:150px;object-fit:contain;object-position:left center}
-.detail-title-image[hidden]{display:none}
-@media(max-width:600px){.detail-title-image-wrap{max-width:min(390px,88vw);margin:14px 0 18px}.detail-title-image{max-height:105px}}
